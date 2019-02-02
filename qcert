@@ -1,0 +1,162 @@
+#!/usr/bin/env python3
+
+import argparse
+from pathlib import Path
+
+from cryptography import x509
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.backends import default_backend
+
+
+class RsaKeyMaker:
+
+    def __init__(self, key_size: int = 2048, public_exponent: int = 65537,
+                 backend=None):
+        self.key_size = key_size
+        self.public_exponent = public_exponent
+
+        self.backend = backend
+
+        if not self.backend:
+            self.backend = default_backend()
+
+    def create_key(self):
+        return rsa.generate_private_key(
+            public_exponent=self.public_exponent,
+            key_size=self.key_size,
+            backend=self.backend
+        )
+
+    def create_key_file(self):
+        pass
+
+
+class CertificateStore:
+
+    class CertType:
+        def __init__(self, name: str, dir: str = None):
+            self.name = name
+            self.dir = dir
+
+            if not self.dir:
+                self.dir = self.name
+
+    @classmethod
+    def configure_cert_store_path(cls, path: Path, mode: int, enforce_dir_mode: bool):
+        path.mkdir(mode=mode, exist_ok=True)
+
+        if not path.exists():
+            raise FileNotFoundError(f'{path}')
+
+        if enforce_dir_mode and not (path.stat().st_mode == mode + 0o40000):
+            raise FileNotFoundError(
+                f'{path} has incorrect permissions - expected {oct(mode)}')
+
+    def __init__(self, path: str, dir_mode=0o700, file_mode=0o700, enforce_mode=True):
+
+        self.cert_types = {'root': CertificateStore.CertType('root'),
+                           'intermediate': CertificateStore.CertType('intermediate'),
+                           'server': CertificateStore.CertType('server'),
+                           'client': CertificateStore.CertType('client')
+                           }
+
+        self.dir_mode = dir_mode
+        self.file_mode = file_mode
+        self.enforce_mode = enforce_mode
+
+        # Setup the base path
+        self.base_path = Path(path).expanduser()
+        CertificateStore.configure_cert_store_path(self.base_path, self.dir_mode, self.enforce_mode)
+
+        # Setup sub-paths for the various cert types
+        for key, val in self.cert_types.items():
+            CertificateStore.configure_cert_store_path(
+                self.get_cert_path(val), self.dir_mode, self.enforce_mode)
+
+    def get_cert_path(self, cert_type: CertType):
+        return Path(self.base_path, cert_type.dir)
+
+    def check_valid_cert_type(self, cert_type_name: str):
+        return cert_type in self.cert_types.keys
+
+    def cert_exists(self, name: str, cert_type: str):
+        pass
+
+
+class QuickCertCli:
+
+    default_path: str = '~/.qcert'
+    default_key_size: int = 2048
+    prog_version = '0.1'
+
+    def create_argparser(self):
+
+        shared_arg_dict = {
+            'certificate_store': {
+                'default': QuickCertCli.default_path,
+                'help': 'The cert store path'
+            }
+        }
+
+        parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                         description='Lazy toolkit for creating certs')
+
+        parser.add_argument('--version', action='version',
+                            version=f'%(prog)s {QuickCertCli.prog_version}')
+
+        subparsers = parser.add_subparsers(title='commands',
+                                           dest='cmd',
+                                           help='sub-command help')
+
+        parser_init = subparsers.add_parser(
+            'init',
+            help='Initialises the certificate store')
+
+        parser_init.add_argument(
+            '--certificate_store', **shared_arg_dict['certificate_store'])
+
+        parser_create = subparsers.add_parser(
+            'create',
+            help='Create a certificate')
+
+        parser_create.add_argument('cert_type', type=str,
+                                   choices=['root', 'intermediate',
+                                            'server', 'client'],
+                                   help='the type of certificate')
+
+        parser_create.add_argument('name', type=str,
+                                   help='the certificate name')
+
+        parser_create.add_argument(
+            '--certificate_store', **shared_arg_dict['certificate_store'])
+
+        parser_create.add_argument('--key-size', type=str,
+                                   required=False,
+                                   default=QuickCertCli.default_key_size,
+                                   help='the key size')
+
+        return parser
+
+    def create_cert(self, name: str, cert_type: str):
+        pass
+
+    def init_cert_store(self):
+        pass
+
+    def run(self):
+        parser = self.create_argparser()
+        args = parser.parse_args()
+
+        self.cert_store = CertificateStore(args.certificate_store)
+
+        if args.cmd == 'create':
+            self.create_cert(args.name, args.cert_type)
+        elif args.cmd == 'init':
+            self.init_cert_store()
+
+        #cert_store = CertificateStore(path=args.certificate_store)
+
+
+if __name__ == "__main__":
+
+    QuickCertCli().run()
