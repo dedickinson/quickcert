@@ -1,2 +1,9 @@
 venv/
 .vscode/
+.tox/
+.pytest_cache
+.eggs
+__pycache__
+*.egg-info
+.coverage
+archive/
