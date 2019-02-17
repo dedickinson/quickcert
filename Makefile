@@ -1,5 +1,7 @@
 #PHONY=docs
 
+.DEFAULT_GOAL := init
+
 init:
 	/usr/bin/env python3 -m pip install pipenv --upgrade
 	pipenv install --dev

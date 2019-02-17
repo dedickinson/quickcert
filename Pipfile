@@ -14,11 +14,12 @@ sphinx = "*"
 tox = "*"
 pytest = "*"
 pytest-cov = "*"
+rope = "*"
 
 [packages]
 cryptography = "*"
 argcomplete = "*"
-numpy = "*"
+python-interface = "*"
 
 [requires]
 python_version = "3.6"
