@@ -3,6 +3,8 @@ import datetime
 
 from interface import Interface
 
+from .key import PublicKey, PrivateKey
+
 
 class CertificateType(Interface):
 
@@ -13,21 +15,6 @@ class CertificateType(Interface):
     @property
     def extensions(self) -> typing.List[int]:
         pass
-
-
-class PublicKey(Interface):
-
-    @property
-    def public_bytes(self, encoding, format): pass
-
-
-class PrivateKey(Interface):
-
-    @property
-    def public_key(self) -> PublicKey: pass
-
-    @property
-    def private_bytes(self, encoding, format, encryption_algorithm): pass
 
 
 class CertificateNameAttributes(Interface):
@@ -77,12 +64,7 @@ class Certificate(Interface):
 
 class CertificateMinter(Interface):
 
-    def mint(self) -> Certificate: pass
-
-
-class KeyMinter(Interface):
-
-    def mint(self) -> PrivateKey: pass
+    def mint(self, properties: typing.Dict) -> Certificate: pass
 
 
 class CertificateStoreEntry(Interface):
@@ -126,50 +108,4 @@ class CertificateStore(Interface):
         pass
 
     def initialise(self):
-        pass
-
-
-class CertificateStoreShadow(Interface):
-    """
-    Stores the passwords used by keys
-    """
-
-    def initialise(self):
-        """Setup the shadow store
-        """
-
-        pass
-
-    def add(self, certificate_type: CertificateType, certificate_name: str, password: str):
-        """Add a password for the designated type/name
-
-        Arguments:
-            certificate_type {CertificateType} -- [description]
-            certificate_name {str} -- [description]
-            password {str} -- [description]
-        """
-
-        pass
-
-    def get(self, certificate_type: CertificateType, certificate_name: str) -> str:
-        """Get the key file password for the designated type/name
-
-        Arguments:
-            certificate_type {CertificateType} -- [description]
-            certificate_name {str} -- [description]
-
-        Returns:
-            str -- the password
-        """
-
-        pass
-
-    def remove(self, certificate_type: CertificateType, certificate_name: str):
-        """Remove the key file password for the designated type/name
-
-        Arguments:
-            certificate_type {CertificateType} -- [description]
-            certificate_name {str} -- [description]
-        """
-
         pass
