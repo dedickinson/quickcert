@@ -1,7 +1,7 @@
 venv/
 .vscode/
 .tox/
-.pytest_cache
+.pytest_cache/
 .eggs
 __pycache__
 *.egg-info

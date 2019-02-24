@@ -17,6 +17,14 @@ CONST_DEFAULT_SIGNING_PADDING = padding.PSS(
 
 class RsaKeyMinter(implements(KeyMinter)):
 
+    def prepare_mint_args(self,
+                          key_size: int = CONST_DEFAULT_KEY_SIZE,
+                          key_public_exponent=CONST_DEFAULT_KEY_PUBLIC_EXPONENT):
+        return {
+            'key_size': key_size,
+            'key_public_exponent': key_public_exponent
+        }
+
     def mint(self,
              **kwargs) -> PrivateKey:
 

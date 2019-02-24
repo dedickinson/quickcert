@@ -21,6 +21,18 @@ def test_key_sizes(key_size):
     assert(key.public_key().key_size == key_size)
 
 
+@pytest.mark.parametrize("key_size", [1024, 2048, 4096])
+def test_mint_args(key_size):
+    minter = RsaKeyMinter()
+
+    mint_args = minter.prepare_mint_args(key_size=key_size)
+
+    key = minter.mint(**mint_args)
+    assert(key.key_size == key_size)
+
+    assert(key.public_key().key_size == key_size)
+
+
 @pytest.mark.parametrize("input", ['mittens',
                                    'jknsdvkjsdui48y3489*&@#$&^*#%',
                                    '',

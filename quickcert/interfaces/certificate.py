@@ -41,6 +41,9 @@ class Certificate(Interface):
     def serial_number(self) -> int: pass
 
     @property
+    def version(self) -> str: pass
+
+    @property
     def not_valid_before(self) -> datetime: pass
 
     @property
@@ -59,12 +62,12 @@ class Certificate(Interface):
     def extensions(self): pass
 
     @property
-    def public_bytes(self, encoding) -> bytes: pass
+    def public_bytes(self, encoding=None) -> bytes: pass
 
 
 class CertificateMinter(Interface):
 
-    def mint(self, properties: typing.Dict) -> Certificate: pass
+    def mint(self, **kwargs) -> Certificate: pass
 
 
 class CertificateStoreEntry(Interface):
