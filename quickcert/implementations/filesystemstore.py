@@ -16,11 +16,11 @@ from cryptography.hazmat.primitives.asymmetric.rsa import (RSAPrivateKey,
 from cryptography.x509 import Certificate as x509Certificate
 from interface import implements
 
-from .exceptions import (CertificateAlreadyExistsException,
+from ..exceptions import (CertificateAlreadyExistsException,
                          CertificateEntryNotFoundException,
                          InvalidCertificateTypeException)
-from .interfaces import (Certificate, CertificateStore, CertificateStoreEntry,
-                         CertificateStoreShadow, CertificateType, PrivateKey,
+from ..interfaces import (Certificate, CertificateStore, CertificateStoreEntry,
+                         CertificateType, PrivateKey,
                          PublicKey)
 from .structures import CertificateStoreEntryImpl
 from .x509_minter import X509_CERTIFICATE_TYPES
