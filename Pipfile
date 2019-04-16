@@ -20,6 +20,7 @@ rope = "*"
 cryptography = "*"
 argcomplete = "*"
 python-interface = "*"
+appdirs = "*"
 
 [requires]
 python_version = "3.6"

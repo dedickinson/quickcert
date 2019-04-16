@@ -3,9 +3,15 @@ import typing
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding, rsa
+from cryptography.hazmat.primitives.asymmetric.padding import AsymmetricPadding
+from cryptography.hazmat.primitives.serialization import (BestAvailableEncryption,
+                                                          NoEncryption,
+                                                          Encoding,
+                                                          PrivateFormat,
+                                                          PublicFormat)
 from interface import implements
 
-from ..interfaces import KeyMinter, PrivateKey
+from ..interfaces import KeyMinter, PrivateKey, PublicKey
 
 CONST_DEFAULT_KEY_SIZE: int = 2048
 CONST_DEFAULT_KEY_PUBLIC_EXPONENT: int = 65537
@@ -13,6 +19,48 @@ CONST_DEFAULT_ENCRYPTION_PADDING = padding.OAEP(
     mgf=padding.MGF1(hashes.SHA256()), algorithm=hashes.SHA256(), label=None)
 CONST_DEFAULT_SIGNING_PADDING = padding.PSS(
     mgf=padding.MGF1, salt_length=padding.PSS.MAX_LENGTH)
+
+
+class RsaPublicKey(implements(PublicKey)):
+    def __init__(self, rsa_public_key):
+        self.key = rsa_public_key
+
+    def serialize(self) -> bytes:
+        return self.key.public_bytes(encoding=Encoding.PEM,
+                                     format=PublicFormat.SubjectPublicKeyInfo)
+
+    @property
+    def key_size(self) -> int:
+        return self.key.key_size
+
+    def encrypt(self, plaintext: bytes,
+                padding: AsymmetricPadding) -> bytes: pass
+
+
+class RsaPrivateKey(implements(PrivateKey)):
+
+    def __init__(self, rsa_key):
+        self.key = rsa_key
+
+    @property
+    def public_key(self) -> PublicKey:
+        return RsaPublicKey(self.key.public_key())
+
+    def decrypt(self, ciphertext: bytes,
+                padding: AsymmetricPadding) -> bytes: pass
+
+    def serialize(self, password: str) -> bytes:
+        if password:
+            enc = BestAvailableEncryption(password=password.encode())
+        else:
+            enc = NoEncryption()
+        return self.key.private_bytes(encoding=Encoding.PEM,
+                                      format=PrivateFormat.PKCS8,
+                                      encryption_algorithm=enc)
+
+    @property
+    def key_size(self) -> int:
+        return self.key.key_size
 
 
 class RsaKeyMinter(implements(KeyMinter)):
@@ -32,8 +80,9 @@ class RsaKeyMinter(implements(KeyMinter)):
             'key_public_exponent', CONST_DEFAULT_KEY_PUBLIC_EXPONENT)
         key_size = kwargs.get('key_size', CONST_DEFAULT_KEY_SIZE)
 
-        return rsa.generate_private_key(
+        key = RsaPrivateKey(rsa.generate_private_key(
             public_exponent=key_public_exponent,
             key_size=key_size,
             backend=default_backend()
-        )
+        ))
+        return key

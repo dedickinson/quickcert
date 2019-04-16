@@ -17,41 +17,12 @@ from cryptography.x509 import Certificate as x509Certificate
 from interface import implements
 
 from ..exceptions import (CertificateAlreadyExistsException,
-                         CertificateEntryNotFoundException,
-                         InvalidCertificateTypeException)
+                          CertificateEntryNotFoundException,
+                          InvalidCertificateTypeException)
 from ..interfaces import (Certificate, CertificateStore, CertificateStoreEntry,
-                         CertificateType, PrivateKey,
-                         PublicKey)
+                          CertificateType, KeyStore, PrivateKey, PublicKey)
 from .structures import CertificateStoreEntryImpl
 from .x509_minter import X509_CERTIFICATE_TYPES
-
-
-class CertificateStoreFilesystemShadow(implements(CertificateStoreShadow)):
-
-    def __init__(self, path: Path):
-        self.path = Path
-
-    def _key(self, certificate_type: CertificateType, certificate_name: str) -> str:
-        return f'{certificate_type.name}/{certificate_name}'
-
-    def initialise(self):
-        with shelve.open(self.path, flag='c', writeback=False) as _:
-            pass
-
-    def add(self, certificate_type: CertificateType, certificate_name: str, password: str):
-        with shelve.open(self.path, flag='w', writeback=True) as db:
-            db[self._key(certificate_type, certificate_name)] = password
-
-    def get(self, certificate_type: CertificateType, certificate_name: str) -> str:
-
-        with shelve.open(self.path, flag='r', writeback=False) as db:
-            result = db[self._key(certificate_type, certificate_name)]
-
-        return result
-
-    def remove(self, certificate_type: CertificateType, certificate_name: str):
-        with shelve.open(self.path, flag='w', writeback=True) as db:
-            del db[self._key(certificate_type, certificate_name)]
 
 
 class CertificateStoreFilesystemConfiguration:

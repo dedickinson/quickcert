@@ -128,6 +128,20 @@ class x509CertificateNameAttributes(implements(CertificateNameAttributes)):
         return self._common_name
 
 
+class x509SigningRequest():
+    def create(self, subject: x509CertificateNameAttributes,
+               private_key: PrivateKey,
+               hash_algorithm: HashAlgorithm = DEFAULT_HASH_ALGORITHM):
+
+        return x509.CertificateSigningRequestBuilder().subject_name(
+            name=subject.certificate_attributes
+        ).sign(
+            private_key=private_key,
+            algorithm=hash_algorithm,
+            backend=default_backend()
+        )
+
+
 class x509Certificate(implements(Certificate)):
 
     def __init__(self, certificate: x509.Certificate):
@@ -166,11 +180,16 @@ class x509Certificate(implements(Certificate)):
         if self._issuer_attributes == None:
 
             self._issuer_attributes = x509CertificateNameAttributes(
-                country_name=self._certificate.issuer.get_attributes_for_oid(NameOID.COUNTRY_NAME)[0].value,
-                state_name=self._certificate.issuer.get_attributes_for_oid(NameOID.STATE_OR_PROVINCE_NAME)[0].value,
-                locality_name=self._certificate.issuer.get_attributes_for_oid(NameOID.LOCALITY_NAME)[0].value,
-                organization_name=self._certificate.issuer.get_attributes_for_oid(NameOID.ORGANIZATION_NAME)[0].value,
-                common_name=self._certificate.issuer.get_attributes_for_oid(NameOID.COMMON_NAME)[0].value
+                country_name=self._certificate.issuer.get_attributes_for_oid(
+                    NameOID.COUNTRY_NAME)[0].value,
+                state_name=self._certificate.issuer.get_attributes_for_oid(
+                    NameOID.STATE_OR_PROVINCE_NAME)[0].value,
+                locality_name=self._certificate.issuer.get_attributes_for_oid(
+                    NameOID.LOCALITY_NAME)[0].value,
+                organization_name=self._certificate.issuer.get_attributes_for_oid(
+                    NameOID.ORGANIZATION_NAME)[0].value,
+                common_name=self._certificate.issuer.get_attributes_for_oid(NameOID.COMMON_NAME)[
+                    0].value
             )
 
         return self._issuer_attributes
@@ -180,11 +199,16 @@ class x509Certificate(implements(Certificate)):
         if self._subject_attributes == None:
 
             self._subject_attributes = x509CertificateNameAttributes(
-                country_name=self._certificate.subject.get_attributes_for_oid(NameOID.COUNTRY_NAME)[0].value,
-                state_name=self._certificate.subject.get_attributes_for_oid(NameOID.STATE_OR_PROVINCE_NAME)[0].value,
-                locality_name=self._certificate.subject.get_attributes_for_oid(NameOID.LOCALITY_NAME)[0].value,
-                organization_name=self._certificate.subject.get_attributes_for_oid(NameOID.ORGANIZATION_NAME)[0].value,
-                common_name=self._certificate.subject.get_attributes_for_oid(NameOID.COMMON_NAME)[0].value
+                country_name=self._certificate.subject.get_attributes_for_oid(
+                    NameOID.COUNTRY_NAME)[0].value,
+                state_name=self._certificate.subject.get_attributes_for_oid(
+                    NameOID.STATE_OR_PROVINCE_NAME)[0].value,
+                locality_name=self._certificate.subject.get_attributes_for_oid(
+                    NameOID.LOCALITY_NAME)[0].value,
+                organization_name=self._certificate.subject.get_attributes_for_oid(
+                    NameOID.ORGANIZATION_NAME)[0].value,
+                common_name=self._certificate.subject.get_attributes_for_oid(NameOID.COMMON_NAME)[
+                    0].value
             )
 
         return self._subject_attributes
@@ -218,6 +242,8 @@ class x509CertificateMinter(implements(CertificateMinter)):
 
     def mint(self,
              **kwargs) -> Certificate:
+
+        # TODO: Handle CSR
 
         certificate_type = kwargs.get('certificate_type')
         private_key = kwargs.get('private_key')

@@ -7,8 +7,7 @@ from cryptography.hazmat.primitives.asymmetric.padding import AsymmetricPadding
 
 class PublicKey(Interface):
 
-    @property
-    def public_bytes(self, encoding, format): pass
+    def serialize(self) -> bytes: pass
 
     @property
     def key_size(self) -> int: pass
@@ -19,13 +18,13 @@ class PublicKey(Interface):
 
 class PrivateKey(Interface):
 
+    @property
     def public_key(self) -> PublicKey: pass
 
     def decrypt(self, ciphertext: bytes,
                 padding: AsymmetricPadding) -> bytes: pass
 
-    @property
-    def private_bytes(self, encoding, format, encryption_algorithm): pass
+    def serialize(self, password: str) -> bytes: pass
 
     @property
     def key_size(self) -> int: pass
@@ -38,7 +37,7 @@ class KeyMinter(Interface):
 
 class KeyStore(Interface):
 
-    def initialise(self):
+    def initialise(self, **kwargs):
         pass
 
     def add(self, key: PrivateKey, key_path: str, key_name: str, password: str):
