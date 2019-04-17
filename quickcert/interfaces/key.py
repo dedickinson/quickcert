@@ -40,11 +40,14 @@ class KeyStore(Interface):
     def initialise(self, **kwargs):
         pass
 
-    def add(self, key: PrivateKey, key_path: str, key_name: str, password: str):
+    def add(self, key: PrivateKey, key_name: str, password: str):
         pass
 
-    def get(self, key_path: str, key_name: str) -> str:
+    def exists(self, key_name:str) -> bool:
         pass
 
-    def remove(self, key_path: str, key_name: str):
+    def get(self, key_name: str) -> PrivateKey:
+        pass
+
+    def remove(self, key_name: str):
         pass

@@ -5,6 +5,7 @@ import argparse
 import os
 import sys
 import string
+from pathlib import Path
 from getpass import getpass
 
 import argcomplete
@@ -25,10 +26,16 @@ class QuickCertCli:
     def __init__(self):
         self.configuration_dir = os.getenv(
             QuickCertCli.ENV_CONFIG_DIR, user_config_dir())
-        self.data_dir = os.getenv(QuickCertCli.ENV_DATA_DIR, user_data_dir())
+
+        self.data_dir = Path(os.getenv(QuickCertCli.ENV_DATA_DIR, user_data_dir()),'quickcert')
+
+        # TODO: Log this
+        self.data_dir.mkdir(mode=0o700, exist_ok=True)
 
         self.password_generator = BasicPasswordGenerator()
+
         self.key_store = FilesystemKeyStore()
+        self.key_store.initialise(dir=self.data_dir)
         self.key_minter = RsaKeyMinter()
 
     def create_argparser(self):
@@ -180,7 +187,10 @@ class QuickCertCli:
         self.key_minter.prepare_mint_args(key_size=key_size)
         key: PrivateKey = self.key_minter.mint()
         if store:
-            self.key_store.add()
+            if (self.key_store.exists(key_name)):
+                sys.exit("Error: Key already exists")
+            else:
+                self.key_store.add(key=key, key_name=key_name, password=password)
         else:
             print(str(key.serialize(password),'utf-8'))
 
