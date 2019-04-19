@@ -27,27 +27,27 @@ class QuickCertCli:
     ENV_DATA_DIR = 'QCERT_DATA_DIR'
 
     def __init__(self):
-        self.configuration_dir = os.getenv(
-            QuickCertCli.ENV_CONFIG_DIR, user_config_dir())
+        self.configuration_dir = Path(
+            os.getenv(QuickCertCli.ENV_CONFIG_DIR, user_config_dir()), __title__)
 
         self.data_dir = Path(
-            os.getenv(QuickCertCli.ENV_DATA_DIR, user_data_dir()), 'quickcert')
-
-        # TODO: Log this
-        self.data_dir.mkdir(mode=0o700, exist_ok=True)
+            os.getenv(QuickCertCli.ENV_DATA_DIR, user_data_dir()), __title__)
 
         self.password_generator = BasicPasswordGenerator()
-
         self.key_store = FilesystemKeyStore()
-        self.key_store.initialise(dir=self.data_dir)
         self.key_minter = RsaKeyMinter()
+
+    def initialise(self):
+        # TODO: Log this
+        self.data_dir.mkdir(mode=0o700, exist_ok=True)
+        self.key_store.initialise(dir=self.data_dir)
 
     def create_argparser(self):
 
         shared_arg_dict = {
-            'certificate_store': {
+            'data_dir': {
                 'default': self.data_dir,
-                'help': 'The certificate store path. Can also be set using the {} environment variable'.format(QuickCertCli.ENV_DATA_DIR)
+                'help': 'The base directory for key and certificate storage. Can also be set using the {} environment variable'.format(QuickCertCli.ENV_DATA_DIR)
             },
             'config_dir': {
                 'default': self.configuration_dir,
@@ -64,19 +64,23 @@ class QuickCertCli:
         parser.add_argument('--version', '-v', action='version',
                             version='{} {}'.format(__title__, __version__))
 
-        # parser.add_argument(
-        #    '--certificate_store', **shared_arg_dict['certificate_store'])
+        parser.add_argument(
+            '--data-dir', **shared_arg_dict['data_dir'])
 
-        # parser.add_argument(
-        #    '--config_dir', **shared_arg_dict['config_dir'])
+        #parser.add_argument(
+        #   '--config-dir', **shared_arg_dict['config_dir'])
 
         subparsers = parser.add_subparsers(title='commands',
                                            dest='cmd',
                                            help='sub-command help')
 
+        #subparsers.add_parser(
+        #    'init',
+        #    help='Initialises the cert & key store')
+
         subparsers.add_parser(
-            'init',
-            help='Initialises the certificate store')
+            'config',
+            help='Displays configuration')
 
         # configure_cli_cert_parser(subparsers)
         configure_cli_random_parser(subparsers)
@@ -84,9 +88,19 @@ class QuickCertCli:
 
         return parser
 
-    def handle_request(self, args):
+    def display_configuration(self):
+        print("Base directory: {}".format(self.data_dir))
+        print("Key store: {}".format(self.key_store.dir))
 
-        if args.cmd == 'random':
+    def handle_request(self, args):
+        if args.data_dir:
+            self.data_dir = Path(args.data_dir)
+
+        self.initialise()
+
+        if args.cmd == 'config':
+            self.display_configuration()
+        elif args.cmd == 'random':
             get_random(self.password_generator, args.length, args.charset)
         elif args.cmd == 'list_keys':
             list_keys(self.key_store)
