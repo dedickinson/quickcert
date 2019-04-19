@@ -1,7 +1,8 @@
 import typing
+from pathlib import Path
 
 from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding, rsa
 from cryptography.hazmat.primitives.asymmetric.padding import AsymmetricPadding
 from cryptography.hazmat.primitives.serialization import (BestAvailableEncryption,
@@ -9,6 +10,7 @@ from cryptography.hazmat.primitives.serialization import (BestAvailableEncryptio
                                                           Encoding,
                                                           PrivateFormat,
                                                           PublicFormat)
+
 from interface import implements
 
 from ..interfaces import KeyMinter, PrivateKey, PublicKey
@@ -38,6 +40,22 @@ class RsaPublicKey(implements(PublicKey)):
 
 
 class RsaPrivateKey(implements(PrivateKey)):
+
+    @classmethod
+    def deserialize(cls, key_path: Path, password=None) -> PrivateKey:
+        if password:
+            p=password.encode()
+        else:
+            p=None
+        
+        with open(key_path, "rb") as key_file:
+            private_key = serialization.load_pem_private_key(
+                key_file.read(),
+                password=p,
+                backend=default_backend()
+            )
+        
+        return RsaPrivateKey(private_key)
 
     def __init__(self, rsa_key):
         self.key = rsa_key

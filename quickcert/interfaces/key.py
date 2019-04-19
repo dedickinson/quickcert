@@ -46,8 +46,11 @@ class KeyStore(Interface):
     def exists(self, key_name:str) -> bool:
         pass
 
-    def get(self, key_name: str) -> PrivateKey:
+    def get(self, key_name: str, password: str=None) -> PrivateKey:
         pass
 
     def remove(self, key_name: str):
+        pass
+
+    def list(self) -> typing.List[str]:
         pass
