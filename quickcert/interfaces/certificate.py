@@ -4,6 +4,7 @@ import datetime
 from interface import Interface
 
 from .key import PublicKey, PrivateKey
+from .util import Tree
 
 
 class CertificateType(Interface):
@@ -61,7 +62,6 @@ class Certificate(Interface):
     @property
     def extensions(self): pass
 
-    @property
     def public_bytes(self, encoding=None) -> bytes: pass
 
 
@@ -70,45 +70,45 @@ class CertificateMinter(Interface):
     def mint(self, **kwargs) -> Certificate: pass
 
 
-class CertificateStoreEntry(Interface):
+class CertificateDetails(Interface):
+    @property
+    def name(self) -> str: pass
 
     @property
-    def name(self) -> str:
-        pass
-
-    @property
-    def certificate(self) -> Certificate:
-        pass
-
-    @property
-    def private_key(self) -> PrivateKey:
-        pass
-
-    @property
-    def public_key(self) -> PublicKey:
-        pass
+    def issuer(self) -> 'CertificateDetails': pass
 
     @property
     def certificate_type(self) -> CertificateType:
         pass
 
 
+class CertificateStoreEntry(Interface):
+
+    @property
+    def certificate(self) -> Certificate:
+        pass
+
+    @property
+    def details(self) -> CertificateDetails:
+        pass
+
+
 class CertificateStore(Interface):
 
-    def list(self, certificate_type: CertificateType) -> typing.List[str]:
+    def initialise(self, **kwargs):
         pass
 
-    def get(self, certificate_type: CertificateType, certificate_name: str) -> CertificateStoreEntry:
+    def list(self) -> Tree:
         pass
 
-    def exists(self, certificate_type: CertificateType, certificate_name: str) -> bool:
+    def get(self, entry: CertificateStoreEntry) -> CertificateStoreEntry:
+        pass
+
+    def exists(self, details: CertificateDetails) -> bool:
         pass
 
     def add(self, entry: CertificateStoreEntry):
         pass
 
-    def remove(self, certificate_type: CertificateType, certificate_name: str):
-        pass
-
-    def initialise(self):
+    def remove(self, entry: CertificateStoreEntry):
         pass

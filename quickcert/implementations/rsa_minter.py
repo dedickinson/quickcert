@@ -58,11 +58,11 @@ class RsaPrivateKey(implements(PrivateKey)):
         return RsaPrivateKey(private_key)
 
     def __init__(self, rsa_key):
-        self.key = rsa_key
+        self._key = rsa_key
 
     @property
     def public_key(self) -> PublicKey:
-        return RsaPublicKey(self.key.public_key())
+        return RsaPublicKey(self._key.public_key())
 
     def decrypt(self, ciphertext: bytes,
                 padding: AsymmetricPadding) -> bytes: pass
@@ -79,6 +79,10 @@ class RsaPrivateKey(implements(PrivateKey)):
     @property
     def key_size(self) -> int:
         return self.key.key_size
+
+    @property
+    def underlying_key(self):
+        return self._key
 
 
 class RsaKeyMinter(implements(KeyMinter)):

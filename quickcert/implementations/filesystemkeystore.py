@@ -14,13 +14,17 @@ class FilesystemKeyStore(implements(KeyStore)):
     _BASE_DIR = 'keystore'
 
     def initialise(self, **kwargs):
+
+        self.dir_mode: int = 0o700
+        self.file_mode: int = 0o400
+
         if 'dir' in kwargs:
             self.dir = Path(kwargs.get('dir'), FilesystemKeyStore._BASE_DIR)
         else:
             raise ValueError("Expected a dir parameter")
 
         # TODO: Log this
-        self.dir.mkdir(mode=0o700, exist_ok=True)
+        self.dir.mkdir(mode=self.dir_mode, exist_ok=True)
 
     def _key_path(self, key_name: str) -> Path:
         return Path(self.dir, "{}.key".format(key_name))
@@ -32,7 +36,7 @@ class FilesystemKeyStore(implements(KeyStore)):
         if self.exists(key_name):
             raise ValueError("The key {} already exists".format(key_name))
 
-        with open(os.open(self._key_path(key_name), flags=os.O_CREAT | os.O_WRONLY, mode=0o400), "wb") as key_file:
+        with open(os.open(self._key_path(key_name), flags=os.O_CREAT | os.O_WRONLY, mode=self.file_mode), "wb") as key_file:
             key_file.write(key.serialize(password))
 
         #with open(os.open(self._public_key_path(key_name), flags=os.O_CREAT | os.O_WRONLY, mode=0o444), "wb") as key_file:

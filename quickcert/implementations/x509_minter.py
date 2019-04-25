@@ -8,9 +8,9 @@ from cryptography.hazmat.primitives.serialization import Encoding
 from cryptography.x509.oid import NameOID
 from interface import implements
 
-from ..interfaces import (Certificate, CertificateMinter,
+from ..interfaces import (Certificate, CertificateMinter, CertificateType,
                           CertificateNameAttributes, PrivateKey, PublicKey)
-from .structures import CertificateType
+
 
 DEFAULT_HASH_ALGORITHM = SHA256()
 
@@ -42,7 +42,7 @@ class x509RootCertificateType(x509AbstractCertificateType):
             extensions=[
                 x509.BasicConstraints(
                     ca=True,
-                    path_length=None)]
+                    path_length=1)]
         )
 
 
@@ -50,7 +50,11 @@ class x509IntermediateCertificateType(x509AbstractCertificateType):
     def __init__(self):
         super().__init__(
             name=CERTIFICATE_TYPE_INTERMEDIATE_NAME,
-            extensions=[]
+            extensions=[
+                x509.BasicConstraints(
+                    ca=True,
+                    path_length=0)
+            ]
         )
 
 
@@ -70,7 +74,11 @@ class x509ClientCertificateType(x509AbstractCertificateType):
     def __init__(self):
         super().__init__(
             name=CERTIFICATE_TYPE_CLIENT_NAME,
-            extensions=[]
+            extensions=[
+                x509.BasicConstraints(
+                    ca=False,
+                    path_length=None)
+            ]
         )
 
 
@@ -99,13 +107,28 @@ class x509CertificateNameAttributes(implements(CertificateNameAttributes)):
 
     @property
     def certificate_attributes(self) -> x509.Name:
-        return x509.Name([
-            x509.NameAttribute(NameOID.COUNTRY_NAME, self.country),
-            x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, self.state),
-            x509.NameAttribute(NameOID.LOCALITY_NAME, self.locality),
-            x509.NameAttribute(NameOID.ORGANIZATION_NAME, self.organization),
-            x509.NameAttribute(NameOID.COMMON_NAME, self.common_name)
-        ])
+        attributes = []
+
+        if self.country:
+            attributes.append(x509.NameAttribute(NameOID.COUNTRY_NAME,
+                                                 self.country))
+
+        if self.state:
+            attributes.append(x509.NameAttribute(
+                NameOID.STATE_OR_PROVINCE_NAME, self.state))
+
+        if self.locality:
+            attributes.append(x509.NameAttribute(NameOID.LOCALITY_NAME,
+                                                 self.locality))
+
+        if self.organization:
+            attributes.append(x509.NameAttribute(
+                NameOID.ORGANIZATION_NAME, self.organization))
+
+        attributes.append(x509.NameAttribute(NameOID.COMMON_NAME,
+                                             value=self.common_name))
+
+        return x509.Name(attributes)
 
     @property
     def country(self) -> str:
@@ -216,15 +239,14 @@ class x509Certificate(implements(Certificate)):
     @property
     def extensions(self): pass
 
-    @property
     def public_bytes(self, encoding=Encoding.PEM) -> bytes:
-        return self._certificate.public_bytes()
+        return self._certificate.public_bytes(encoding)
 
 
 class x509CertificateMinter(implements(CertificateMinter)):
 
-    def prepare_mint_args(self,
-                          certificate_type: x509AbstractCertificateType,
+    @staticmethod
+    def prepare_mint_args(certificate_type: x509AbstractCertificateType,
                           private_key: PrivateKey,
                           subject: x509CertificateNameAttributes,
                           issuer: x509CertificateNameAttributes,
@@ -246,7 +268,7 @@ class x509CertificateMinter(implements(CertificateMinter)):
         # TODO: Handle CSR
 
         certificate_type = kwargs.get('certificate_type')
-        private_key = kwargs.get('private_key')
+        private_key: PrivateKey = kwargs.get('private_key')
         subject = kwargs.get('subject')
         issuer = kwargs.get('issuer')
         hash_algorithm = kwargs.get('hash_algorithm', DEFAULT_HASH_ALGORITHM)
@@ -262,7 +284,7 @@ class x509CertificateMinter(implements(CertificateMinter)):
         ).serial_number(
             x509.random_serial_number()
         ).public_key(
-            private_key.public_key()
+            private_key.public_key.key
         ).subject_name(
             subject.certificate_attributes
         ).issuer_name(
@@ -275,7 +297,7 @@ class x509CertificateMinter(implements(CertificateMinter)):
 
         return x509Certificate(
             builder.sign(
-                private_key=private_key,
+                private_key=private_key.underlying_key,
                 algorithm=hash_algorithm,
                 backend=default_backend()
             ))

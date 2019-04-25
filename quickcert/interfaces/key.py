@@ -29,6 +29,9 @@ class PrivateKey(Interface):
     @property
     def key_size(self) -> int: pass
 
+    @property
+    def underlying_key(self): pass
+
 
 class KeyMinter(Interface):
 

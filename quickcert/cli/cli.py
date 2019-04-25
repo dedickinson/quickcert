@@ -10,12 +10,12 @@ from pathlib import Path
 import argcomplete
 from appdirs import user_config_dir, user_data_dir
 
-from .__version__ import (__copyright__, __description__, __license__,
-                          __title__, __version__)
-from .interfaces import PrivateKey
-from .implementations import BasicPasswordGenerator, FilesystemKeyStore, RsaKeyMinter
+from ..__version__ import (__copyright__, __description__, __license__,
+                           __title__, __version__)
+from ..interfaces import PrivateKey
+from ..implementations import BasicPasswordGenerator, FilesystemKeyStore, RsaKeyMinter, FilesystemCertificateStore, x509CertificateMinter
 
-from .cli_cert import configure_cli_key_parser
+from .cli_cert import configure_cli_cert_parser, list_certs, create_cert, delete_cert, get_cert
 from .cli_key import configure_cli_key_parser, create_key, list_keys, delete_key, get_key
 from .cli_random import configure_cli_random_parser, get_random
 from .cli_util import prompt_for_password
@@ -37,10 +37,14 @@ class QuickCertCli:
         self.key_store = FilesystemKeyStore()
         self.key_minter = RsaKeyMinter()
 
+        self.cert_store = FilesystemCertificateStore()
+        self.cert_minter = x509CertificateMinter()
+
     def initialise(self):
         # TODO: Log this
         self.data_dir.mkdir(mode=0o700, exist_ok=True)
         self.key_store.initialise(dir=self.data_dir)
+        self.cert_store.initialise(dir=self.data_dir)
 
     def create_argparser(self):
 
@@ -67,14 +71,14 @@ class QuickCertCli:
         parser.add_argument(
             '--data-dir', **shared_arg_dict['data_dir'])
 
-        #parser.add_argument(
+        # parser.add_argument(
         #   '--config-dir', **shared_arg_dict['config_dir'])
 
         subparsers = parser.add_subparsers(title='commands',
                                            dest='cmd',
                                            help='sub-command help')
 
-        #subparsers.add_parser(
+        # subparsers.add_parser(
         #    'init',
         #    help='Initialises the cert & key store')
 
@@ -82,15 +86,16 @@ class QuickCertCli:
             'config',
             help='Displays configuration')
 
-        # configure_cli_cert_parser(subparsers)
         configure_cli_random_parser(subparsers)
         configure_cli_key_parser(subparsers)
+        configure_cli_cert_parser(subparsers)
 
         return parser
 
     def display_configuration(self):
         print("Base directory: {}".format(self.data_dir))
         print("Key store: {}".format(self.key_store.dir))
+        print("Certificate store: {}".format(self.cert_store.dir))
 
     def handle_request(self, args):
         if args.data_dir:
@@ -124,6 +129,36 @@ class QuickCertCli:
                        key_name=args.name,
                        password=password,
                        store=(not args.no_store))
+        elif args.cmd == 'create_cert':
+            if args.no_password:
+                password = None
+            elif args.password:
+                password = args.password
+            else:
+                password = prompt_for_password()
+
+            create_cert(
+                cert_minter=self.cert_minter,
+                cert_store=self.cert_store,
+                key_store=self.key_store,
+                cert_path=args.cert_path,
+                common_name=args.common_name,
+                key_name=args.key_name,
+                key_password=password,
+                country=args.country,
+                state=args.state,
+                locality=args.locality,
+                organization=args.organization,
+                store=(not args.no_store)
+            )
+        elif args.cmd == 'list_certs':
+            list_certs(cert_store=self.cert_store)
+        elif args.cmd == 'get_cert':
+            get_cert(cert_store=self.cert_store,
+                       cert_path=args.cert_path)
+        elif args.cmd == 'delete_cert':
+            delete_cert(cert_store=self.cert_store,
+                        cert_path=args.cert_path)
         else:
             sys.exit("Unknown command")
 

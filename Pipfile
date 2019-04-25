@@ -21,6 +21,7 @@ cryptography = "*"
 argcomplete = "*"
 python-interface = "*"
 appdirs = "*"
+enum34 = "*"
 
 [requires]
 python_version = "3.6"

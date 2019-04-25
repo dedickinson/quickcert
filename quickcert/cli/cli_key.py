@@ -1,7 +1,7 @@
 import sys
 import argparse
 
-from .interfaces import PrivateKey, KeyStore, KeyMinter
+from ..interfaces import PrivateKey, KeyStore, KeyMinter
 
 
 def configure_cli_key_parser(parser, default_key_size: int = 2048):
