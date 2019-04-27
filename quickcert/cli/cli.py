@@ -108,7 +108,7 @@ class QuickCertCli:
         elif args.cmd == 'random':
             get_random(self.password_generator, args.length, args.charset)
         elif args.cmd == 'list_keys':
-            list_keys(self.key_store)
+            list_keys(self.key_store, json_format=args.json)
         elif args.cmd == 'delete_key':
             delete_key(key_store=self.key_store,
                        key_name=args.key_name)
@@ -152,7 +152,7 @@ class QuickCertCli:
                 store=(not args.no_store)
             )
         elif args.cmd == 'list_certs':
-            list_certs(cert_store=self.cert_store)
+            list_certs(cert_store=self.cert_store, json_format=args.json)
         elif args.cmd == 'get_cert':
             get_cert(cert_store=self.cert_store,
                        cert_path=args.cert_path)

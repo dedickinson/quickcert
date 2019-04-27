@@ -1,6 +1,7 @@
 import argparse
 from collections import namedtuple
 from typing import Dict, List, NamedTuple
+import json
 
 from ..implementations import (X509_CERTIFICATE_TYPES, CertificateDetailsImpl,
                                CertificateStoreEntryImpl,
@@ -102,9 +103,12 @@ with --no-password, or be prompted for a password""".format(
                                       action='store_true',
                                       help="don't use password for the key")
 
-    parser.add_parser(
+    list_certs = parser.add_parser(
         'list_certs',
         help='Lists the certificates in the certificate store')
+
+    list_certs.add_argument('--json',
+                            action='store_true')
 
     parser_info = parser.add_parser(
         'get_cert',
@@ -184,17 +188,16 @@ def create_cert(cert_store: CertificateStore, key_store: KeyStore,
         print(str(certificate.public_bytes(), 'utf-8'))
 
 
-def list_certs(cert_store: CertificateStore):
-    
-    def treebeard(t):
-        for node in tree.keys():
-            print(node)
-            treebeard(t[node])
+def list_certs(cert_store: CertificateStore, json_format:bool):
 
     tree = cert_store.list()
-    print(tree)
-    #treebeard(tree)
-    
+
+    if json_format:
+        print(json.dumps(tree, default=tree.transform))
+    else:
+        print(tree.format_string(include_leaves=False,
+                                 include_root=False, compact=True))
+
 
 def get_cert(cert_store: CertificateStore, cert_path: str):
     entry = CertificateStoreEntryImpl(details=get_certificate_details(cert_path),
@@ -203,7 +206,7 @@ def get_cert(cert_store: CertificateStore, cert_path: str):
         cert_entry = cert_store.get(entry)
     except CertificateEntryNotFoundException as e:
         exit(e)
-    
+
     print(str(cert_entry.certificate.public_bytes(), 'utf-8'))
 
 

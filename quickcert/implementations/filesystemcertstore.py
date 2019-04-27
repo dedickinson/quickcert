@@ -26,6 +26,40 @@ from .structures import CertificateStoreEntryImpl
 from .x509_minter import X509_CERTIFICATE_TYPES, x509Certificate
 
 
+class FilesystemCertTree(Tree):
+
+    def __init__(self, name, dir, ignore_list=[]):
+        super().__init__(name)
+        self._dir = dir
+        self._ignore_list = ignore_list
+        self._construct_tree()
+        self._dir_icon = '\U0001F4DC'
+        #self._dir_join_icon = '\U00002533'
+        self._dir_join_icon = ''
+        #self._dir_join_icon_base = '\U00002501'
+        self._dir_join_icon_base = ''
+        self._dir_suffix = ''
+        self._pipe_icon = '\U00002503'
+        self._file_icon = '\U0001F4C4'
+        #self._file_icon_base = '\U00002517'
+        self._file_icon_base = '\U0001F4C4'
+        #self._file_join_icon = '\U00002501'
+        self._file_join_icon = ' '
+
+    def _construct_tree(self):
+
+        for file in sorted(os.scandir(self._dir), key=lambda f: f.name.lower()):
+            if file.name in self._ignore_list:
+                continue
+
+            if file.is_dir():
+                self.add_child_node(FilesystemCertTree(name=file.name,
+                                                       dir=file,
+                                                       ignore_list=self._ignore_list))
+            else:
+                self.add_leaf_node(file.name)
+
+
 class FilesystemCertificateStore(implements(CertificateStore)):
 
     _BASE_DIR = 'certstore'
@@ -64,15 +98,9 @@ class FilesystemCertificateStore(implements(CertificateStore)):
         return Path(self._get_cert_path(entry_details), self._get_cert_file_name(entry_details))
 
     def list(self) -> Tree:
-        
-        listing = Tree()
-        listing['root']['test']
-        listing['root']['test2']
-        listing['root']['test']['intermediate']['int']['server']['server1']
-        listing['root']['test']['intermediate']['int']['server']['server2']
-        listing['root']['test']['intermediate']['int']['client']['client1']
+        tree = FilesystemCertTree(name='', dir=self.dir)
 
-        return listing
+        return tree
 
     def exists(self, details: CertificateDetails) -> bool:
         if self._get_cert_file_path(details).exists():
@@ -129,7 +157,7 @@ class FilesystemCertificateStore(implements(CertificateStore)):
                 ))
         cert_file_path = self._get_cert_file_path(entry.details)
         cert = self._load_certificate_file(cert_file_path)
-        
+
         return CertificateStoreEntryImpl(certificate=cert, details=entry.details)
 
     def remove(self, entry: CertificateStoreEntry):

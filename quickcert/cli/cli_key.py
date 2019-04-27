@@ -1,5 +1,6 @@
 import sys
 import argparse
+import json
 
 from ..interfaces import PrivateKey, KeyStore, KeyMinter
 
@@ -35,10 +36,13 @@ def configure_cli_key_parser(parser, default_key_size: int = 2048):
                                           action='store_true',
                                           help="don't use password for the key")
 
-    parser.add_parser(
+    list_keys = parser.add_parser(
         'list_keys',
         help='Lists keys in the store',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+    list_keys.add_argument('--json',
+                           action='store_true')
 
     parser_delete_key = parser.add_parser(
         'delete_key',
@@ -54,7 +58,7 @@ def configure_cli_key_parser(parser, default_key_size: int = 2048):
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     parser_get_key.add_argument('key_name', type=str,
-                                   help='the key name')
+                                help='the key name')
 
 
 def create_key(key_minter: KeyMinter, key_store: KeyStore, key_name: str, key_size: int, password: str, store: bool):
@@ -69,13 +73,19 @@ def create_key(key_minter: KeyMinter, key_store: KeyStore, key_name: str, key_si
         print(str(key.public_key.serialize(), 'utf-8'))
 
 
-def list_keys(key_store: KeyStore):
-    for key in key_store.list():
-        print(key)
+def list_keys(key_store: KeyStore, json_format:bool):
+    if json_format:
+        print(json.dumps({
+            'keys': key_store.list()
+        }))
+    else:
+        for key in key_store.list():
+            print('\U0001F5DD {}'.format(key))
 
 
 def delete_key(key_store: KeyStore, key_name: str):
     key_store.remove(key_name)
+
 
 def get_key(key_store: KeyStore, key_name: str, password=None, private=False):
     key: PrivateKey = key_store.get(key_name, password)
