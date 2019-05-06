@@ -105,6 +105,33 @@ class x509CertificateNameAttributes(implements(CertificateNameAttributes)):
         self._organization_name = organization_name
         self._common_name = common_name
 
+    @staticmethod
+    def extract_attributes(certificate: 'x509Certificate') -> typing.Tuple[CertificateNameAttributes, CertificateNameAttributes]:
+        def list_get(l, i=0, default=None):
+            try:
+                return l[i].value
+            except IndexError:
+                return default
+
+        def get_attributes(element):
+            return x509CertificateNameAttributes(
+                country_name=list_get(element.get_attributes_for_oid(
+                    NameOID.COUNTRY_NAME)),
+                state_name=list_get(element.get_attributes_for_oid(
+                    NameOID.STATE_OR_PROVINCE_NAME)),
+                locality_name=list_get(element.get_attributes_for_oid(
+                    NameOID.LOCALITY_NAME)),
+                organization_name=list_get(element.get_attributes_for_oid(
+                    NameOID.ORGANIZATION_NAME)),
+                common_name=list_get(element.get_attributes_for_oid(
+                    NameOID.COMMON_NAME))
+            )
+
+        issuer_attributes = get_attributes(certificate.issuer)
+        subject_attributes = get_attributes(certificate.subject)
+
+        return (issuer_attributes, subject_attributes)
+
     @property
     def certificate_attributes(self) -> x509.Name:
         attributes = []
@@ -152,14 +179,17 @@ class x509CertificateNameAttributes(implements(CertificateNameAttributes)):
 
 
 class x509SigningRequest():
-    def create(self, subject: x509CertificateNameAttributes,
-               private_key: PrivateKey,
-               hash_algorithm: HashAlgorithm = DEFAULT_HASH_ALGORITHM):
+    @staticmethod
+    def generate(subject: x509CertificateNameAttributes,
+                 private_key: PrivateKey,
+                 hash_algorithm: HashAlgorithm = DEFAULT_HASH_ALGORITHM):
 
-        return x509.CertificateSigningRequestBuilder().subject_name(
-            name=subject.certificate_attributes
-        ).sign(
-            private_key=private_key,
+        csr = x509.CertificateSigningRequestBuilder().subject_name(
+            subject.certificate_attributes
+        )
+
+        return csr.sign(
+            private_key=private_key.underlying_key,
             algorithm=hash_algorithm,
             backend=default_backend()
         )
@@ -169,8 +199,8 @@ class x509Certificate(implements(Certificate)):
 
     def __init__(self, certificate: x509.Certificate):
         self._certificate = certificate
-        self._issuer_attributes = None
-        self._subject_attributes = None
+        self._issuer_attributes, self._subject_attributes = x509CertificateNameAttributes.extract_attributes(
+            certificate)
 
     @property
     def serial_number(self) -> int:
@@ -199,41 +229,10 @@ class x509Certificate(implements(Certificate)):
 
     @property
     def issuer(self) -> CertificateNameAttributes:
-
-        if self._issuer_attributes == None:
-
-            self._issuer_attributes = x509CertificateNameAttributes(
-                country_name=self._certificate.issuer.get_attributes_for_oid(
-                    NameOID.COUNTRY_NAME)[0].value,
-                state_name=self._certificate.issuer.get_attributes_for_oid(
-                    NameOID.STATE_OR_PROVINCE_NAME)[0].value,
-                locality_name=self._certificate.issuer.get_attributes_for_oid(
-                    NameOID.LOCALITY_NAME)[0].value,
-                organization_name=self._certificate.issuer.get_attributes_for_oid(
-                    NameOID.ORGANIZATION_NAME)[0].value,
-                common_name=self._certificate.issuer.get_attributes_for_oid(NameOID.COMMON_NAME)[
-                    0].value
-            )
-
         return self._issuer_attributes
 
     @property
     def subject(self) -> CertificateNameAttributes:
-        if self._subject_attributes == None:
-
-            self._subject_attributes = x509CertificateNameAttributes(
-                country_name=self._certificate.subject.get_attributes_for_oid(
-                    NameOID.COUNTRY_NAME)[0].value,
-                state_name=self._certificate.subject.get_attributes_for_oid(
-                    NameOID.STATE_OR_PROVINCE_NAME)[0].value,
-                locality_name=self._certificate.subject.get_attributes_for_oid(
-                    NameOID.LOCALITY_NAME)[0].value,
-                organization_name=self._certificate.subject.get_attributes_for_oid(
-                    NameOID.ORGANIZATION_NAME)[0].value,
-                common_name=self._certificate.subject.get_attributes_for_oid(NameOID.COMMON_NAME)[
-                    0].value
-            )
-
         return self._subject_attributes
 
     @property
@@ -247,17 +246,17 @@ class x509CertificateMinter(implements(CertificateMinter)):
 
     @staticmethod
     def prepare_mint_args(certificate_type: x509AbstractCertificateType,
-                          private_key: PrivateKey,
-                          subject: x509CertificateNameAttributes,
+                          issuer_key: PrivateKey,
                           issuer: x509CertificateNameAttributes,
+                          csr=None,
                           hash_algorithm: HashAlgorithm = DEFAULT_HASH_ALGORITHM,
-                          duration_days: int = 360):
+                          duration_days: int = 365):
 
         return {
             'certificate_type': certificate_type,
-            'private_key': private_key,
-            'subject': subject,
+            'issuer_key': issuer_key,
             'issuer': issuer,
+            'csr': csr,
             'hash_algorithm': hash_algorithm,
             'duration_days': duration_days
         }
@@ -265,30 +264,34 @@ class x509CertificateMinter(implements(CertificateMinter)):
     def mint(self,
              **kwargs) -> Certificate:
 
-        # TODO: Handle CSR
-
         certificate_type = kwargs.get('certificate_type')
-        private_key: PrivateKey = kwargs.get('private_key')
-        subject = kwargs.get('subject')
+        issuer_key: PrivateKey = kwargs.get('issuer_key')
         issuer = kwargs.get('issuer')
+        csr = kwargs.get('csr')
         hash_algorithm = kwargs.get('hash_algorithm', DEFAULT_HASH_ALGORITHM)
-        duration_days = kwargs.get('duration_days', 360)
+        duration_days = kwargs.get('duration_days', 365)
 
         one_day = timedelta(days=1)
 
-        builder = x509.CertificateBuilder(
-        ).not_valid_before(
+        if csr:
+            subject = csr.subject
+            public_key = csr.public_key()
+        else:
+            subject = issuer
+            public_key = issuer_key.public_key.underlying_key
+
+        builder = x509.CertificateBuilder().not_valid_before(
             datetime.today() - one_day
         ).not_valid_after(
             datetime.today() + (one_day * duration_days)
         ).serial_number(
             x509.random_serial_number()
         ).public_key(
-            private_key.public_key.key
-        ).subject_name(
-            subject.certificate_attributes
+            public_key
         ).issuer_name(
             issuer.certificate_attributes
+        ).subject_name(
+            subject
         )
 
         for extension in certificate_type.extensions:
@@ -297,7 +300,7 @@ class x509CertificateMinter(implements(CertificateMinter)):
 
         return x509Certificate(
             builder.sign(
-                private_key=private_key.underlying_key,
+                private_key=issuer_key.underlying_key,
                 algorithm=hash_algorithm,
                 backend=default_backend()
             ))

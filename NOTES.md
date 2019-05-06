@@ -2,4 +2,4 @@
 
 To review a cert:
 
-    openssl x509 -in /tmp/cert.pem -text -noout
+    openssl x509 -text -noout -in /tmp/cert.pem

@@ -8,7 +8,7 @@ from ..interfaces import PrivateKey, KeyStore, KeyMinter
 def configure_cli_key_parser(parser, default_key_size: int = 2048):
 
     parser_create_key = parser.add_parser(
-        'create_key',
+        'create-key',
         help='Create a key',
         description='You can set a password using --password, use no password with --no-password, or be prompted for a password',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -37,7 +37,7 @@ def configure_cli_key_parser(parser, default_key_size: int = 2048):
                                           help="don't use password for the key")
 
     list_keys = parser.add_parser(
-        'list_keys',
+        'list-keys',
         help='Lists keys in the store',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
@@ -45,7 +45,7 @@ def configure_cli_key_parser(parser, default_key_size: int = 2048):
                            action='store_true')
 
     parser_delete_key = parser.add_parser(
-        'delete_key',
+        'delete-key',
         help='Delete a key from the store',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
@@ -53,12 +53,23 @@ def configure_cli_key_parser(parser, default_key_size: int = 2048):
                                    help='the key name')
 
     parser_get_key = parser.add_parser(
-        'get_key',
+        'get-key',
         help='Get a key from the store',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     parser_get_key.add_argument('key_name', type=str,
                                 help='the key name')
+
+    parser_get_key_pwdgrp = parser_get_key.add_mutually_exclusive_group(
+        required=False)
+
+    parser_get_key_pwdgrp.add_argument('--password',
+                                          type=str,
+                                          help='the password for the key')
+
+    parser_get_key_pwdgrp.add_argument('--no-password',
+                                          action='store_true',
+                                          help="don't use password for the key")
 
 
 def create_key(key_minter: KeyMinter, key_store: KeyStore, key_name: str, key_size: int, password: str, store: bool):

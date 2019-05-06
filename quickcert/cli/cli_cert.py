@@ -6,9 +6,16 @@ import json
 from ..implementations import (X509_CERTIFICATE_TYPES, CertificateDetailsImpl,
                                CertificateStoreEntryImpl,
                                x509CertificateMinter,
-                               x509CertificateNameAttributes)
+                               x509CertificateNameAttributes,
+                               x509RootCertificateType,
+                               x509IntermediateCertificateType,
+                               x509ServerCertificateType,
+                               x509ClientCertificateType,
+                               x509SigningRequest)
 from ..interfaces import (Certificate, CertificateDetails, CertificateMinter,
                           CertificateStore, KeyStore, PrivateKey)
+
+from .cli_util import prompt_for_password
 
 from ..exceptions import CertificateEntryNotFoundException
 
@@ -36,13 +43,11 @@ For example:
         /root/myroot/intermediate/myintermediatecert/client/myclientcert
     - A 'self-issued' server cert:
         /server/mywebservercert
-
-You can provide a key password using --password, use no password
-with --no-password, or be prompted for a password""".format(
+""".format(
         ','.join(cert_type_choices)
     )
     parser_create = parser.add_parser(
-        'create_cert',
+        'create-cert',
         description='Creates a new certificate',
         epilog=epilog,
         help='Create a certificate',
@@ -52,14 +57,37 @@ with --no-password, or be prompted for a password""".format(
                                type=str,
                                help='the certificate path')
 
-    parser_create.add_argument('--no-store',
-                               action='store_true',
-                               help='don\'t store the cert, just send it to stdout')
-
-    parser_create.add_argument('--key-name',
+    parser_create.add_argument('--issuer-key-name',
                                type=str,
                                required=True,
-                               help='the key name')
+                               help='the issuing key name')
+
+    parser_create_issuer_pwdgrp = parser_create.add_mutually_exclusive_group(
+        required=False)
+
+    parser_create_issuer_pwdgrp.add_argument('--issuer-key-password',
+                                             type=str,
+                                             help='the password for the key')
+
+    parser_create_issuer_pwdgrp.add_argument('--issuer-key-no-password',
+                                             action='store_true',
+                                             help="don't use password for the key")
+
+    parser_create.add_argument('--signing-key-name',
+                               type=str,
+                               required=False,
+                               help='the signing key name (not required for a Root cert)')
+
+    parser_create_signing_pwdgrp = parser_create.add_mutually_exclusive_group(
+        required=False)
+
+    parser_create_signing_pwdgrp.add_argument('--signing-key-password',
+                                              type=str,
+                                              help='the password for the key')
+
+    parser_create_signing_pwdgrp.add_argument('--signing-key-no-password',
+                                              action='store_true',
+                                              help="don't use password for the key")
 
     parser_create.add_argument('--country',
                                type=str,
@@ -84,34 +112,27 @@ with --no-password, or be prompted for a password""".format(
     parser_create.add_argument('--common-name',
                                type=str,
                                required=False,
-                               help='name attribute (the name param is used for common name if not provided)')
+                               help='name attribute (the name elment in cert_path is used for common name if not provided)')
 
     parser_create.add_argument('--duration',
                                type=str,
                                required=False,
-                               default=360,
-                               help='certificate duration (in days). Default is 360.')
+                               default=365,
+                               help='certificate duration (in days). Default is 365.')
 
-    parser_create_pwdgrp = parser_create.add_mutually_exclusive_group(
-        required=False)
-
-    parser_create_pwdgrp.add_argument('--password',
-                                      type=str,
-                                      help='the password for the key')
-
-    parser_create_pwdgrp.add_argument('--no-password',
-                                      action='store_true',
-                                      help="don't use password for the key")
+    parser_create.add_argument('--no-store',
+                               action='store_true',
+                               help='don\'t store the cert, just send it to stdout')
 
     list_certs = parser.add_parser(
-        'list_certs',
+        'list-certs',
         help='Lists the certificates in the certificate store')
 
     list_certs.add_argument('--json',
                             action='store_true')
 
     parser_info = parser.add_parser(
-        'get_cert',
+        'get-cert',
         help='Get information about a certificate')
 
     parser_info.add_argument(
@@ -120,7 +141,7 @@ with --no-password, or be prompted for a password""".format(
         help='The type/name of the cert - e.g. /server/www.example.com')
 
     parser_delete = parser.add_parser(
-        'delete_cert',
+        'delete-cert',
         help='Delete a certificate (and all of the sub-certificates)')
 
     parser_delete.add_argument(
@@ -136,15 +157,61 @@ def get_certificate_details(cert_path: str) -> CertificateDetailsImpl:
 
 def create_cert(cert_store: CertificateStore, key_store: KeyStore,
                 cert_minter: CertificateMinter, cert_path: str,
-                key_name: str, key_password: str,
+                issuer_key_name: str, issuer_key_password: str, issuer_key_no_password: bool = False,
+                signing_key_name: str = None, signing_key_password: str = None, signing_key_no_password: bool = False,
                 country: str = None, state: str = None, locality: str = None, organization: str = None,
-                common_name: str = None, duration_days: int = 360, store: bool = True):
+                common_name: str = None, duration_days: int = 365, store: bool = True):
+    """Creates a new certificate
 
-    if not key_name:
-        exit("No key name was provided")
+    This function handles the creation of a new certificate. The general notes
+    below are based on the cert_path:
 
-    if not key_store.exists(key_name):
-        exit("The requested key ({}) does not exist".format(key_name))
+    ``/server/myserver`` & ``/client/myclient``
+        A self-signed certificate in which the issuer and the subject are the same.
+        No signing_key_name is needed.
+
+    ``/root/myroot``
+        A root CA in which the issuer and the subject are the same
+        No signing_key_name is needed.
+
+    ``/root/myroot/intermediate/myintermediate``
+        An intermediate CA with the issuer being ``/root/myroot``
+        A signing_key_name is needed
+
+    ``/root/myroot/intermediate/myintermediate/server/myserver``
+        A server certificate with the issuer being ``/root/myroot/intermediate/myintermediate``
+        A signing_key_name is needed
+
+    ``/root/myroot/server/myserver``
+        A server certificate with the issuer being ``/root/myroot``
+        A signing_key_name is needed
+
+
+    Arguments:
+        cert_store {CertificateStore} -- [description]
+        key_store {KeyStore} -- [description]
+        cert_minter {CertificateMinter} -- [description]
+        cert_path {str} -- [description]
+        issuer_key_name {str} -- [description]
+        issuer_key_password {str} -- [description]
+
+    Keyword Arguments:
+        signing_key_name {str} -- [description] (default: {None})
+        signing_key_password {str} -- [description] (default: {None})
+        country {str} -- [description] (default: {None})
+        state {str} -- [description] (default: {None})
+        locality {str} -- [description] (default: {None})
+        organization {str} -- [description] (default: {None})
+        common_name {str} -- [description] (default: {None})
+        duration_days {int} -- [description] (default: {365})
+        store {bool} -- [description] (default: {True})
+    """
+
+    if not issuer_key_name:
+        exit("No issuer key name was provided")
+
+    if not key_store.exists(issuer_key_name):
+        exit("The requested issuer key ({}) does not exist".format(issuer_key_name))
 
     if duration_days <= 0:
         exit("Duration days must be positive")
@@ -153,6 +220,9 @@ def create_cert(cert_store: CertificateStore, key_store: KeyStore,
         exit("No value was provided for cert_path")
 
     cert_details = get_certificate_details(cert_path)
+
+    if cert_store.exists(cert_details):
+        exit("The certificate already exists")
 
     if not common_name:
         common_name = cert_details.name
@@ -165,16 +235,88 @@ def create_cert(cert_store: CertificateStore, key_store: KeyStore,
         organization_name=organization
     )
 
-    issuer = None
+    signing_key: PrivateKey = None
+    csr = None
 
-    private_key: PrivateKey = key_store.get(key_name=key_name,
-                                            password=key_password)
+    if type(cert_details.certificate_type) is x509RootCertificateType:
+        # Root certificate
+        issuer = subject
+    elif ((type(cert_details.certificate_type) in [x509ClientCertificateType, x509ServerCertificateType])
+          and (cert_details.issuer is None)):
+        # Self-signed server/client cert
+        issuer = subject
+    else:
+        # An intermediate cert or signed client/server cert
+        if not signing_key_name:
+            exit("No signing key name was provided")
+
+        if not key_store.exists(signing_key_name):
+            exit("The requested signing key ({}) does not exist".format(
+                signing_key_name))
+
+        # Check the issuer's certificate
+        if cert_details.issuer.certificate_type in [x509RootCertificateType, x509IntermediateCertificateType]:
+            exit("The certificate's issuer must be a Root or Intermediate CA")
+
+        if not cert_store.exists(cert_details.issuer):
+            exit("The issuing certificate {} doesn't exist.".format(
+                cert_details.issuer.name))
+
+        issuer_cert = cert_store.get(CertificateStoreEntryImpl(
+            details=cert_details.issuer,
+            certificate=None
+        ))
+
+        issuer = issuer_cert.certificate.subject
+
+        # Get the signing key (for use with a CSR)
+        if signing_key_no_password:
+            signing_password = None
+        elif signing_key_password:
+            signing_password = signing_key_password
+        else:
+            signing_password = prompt_for_password(prompt="Enter password for key {}: ".format(signing_key_name),
+                                                   validate=False)
+
+        try:
+            signing_key = key_store.get(key_name=signing_key_name,
+                                        password=signing_password)
+        except ValueError as e:
+            exit("Failed to access the signing key ({}) - {}".format(issuer_key_name,
+                                                                     e))
+
+        csr = x509SigningRequest.generate(
+            private_key=signing_key,
+            subject=subject
+        )
+
+    # Load the Issuer Key
+    if issuer_key_no_password:
+        issuer_password = None
+    elif issuer_key_password:
+        issuer_password = issuer_key_password
+    else:
+        issuer_password = prompt_for_password(prompt="Enter password for key {}: ".format(issuer_key_name),
+                                              validate=False)
+
+    try:
+        issuer_key: PrivateKey = key_store.get(key_name=issuer_key_name,
+                                               password=issuer_password)
+    except ValueError as e:
+        exit("Failed to access the issuer key ({}) - {}".format(issuer_key_name,
+                                                                e))
+
+    if not csr:
+        csr = x509SigningRequest.generate(
+            private_key=issuer_key,
+            subject=issuer
+        )
 
     cert_args = x509CertificateMinter.prepare_mint_args(
         certificate_type=cert_details.certificate_type,
-        private_key=private_key,
-        subject=subject,
-        issuer=subject,
+        issuer_key=issuer_key,
+        issuer=issuer,
+        csr=csr,
         duration_days=duration_days
     )
 
@@ -188,7 +330,7 @@ def create_cert(cert_store: CertificateStore, key_store: KeyStore,
         print(str(certificate.public_bytes(), 'utf-8'))
 
 
-def list_certs(cert_store: CertificateStore, json_format:bool):
+def list_certs(cert_store: CertificateStore, json_format: bool):
 
     tree = cert_store.list()
 

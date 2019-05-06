@@ -9,7 +9,8 @@ from .x509_minter import (x509CertificateMinter,
                           x509IntermediateCertificateType,
                           x509RootCertificateType, 
                           x509ServerCertificateType,
-                          X509_CERTIFICATE_TYPES)
+                          X509_CERTIFICATE_TYPES,
+                          x509SigningRequest)
 
 from .password_generator import BasicPasswordGenerator
 from .filesystemkeystore import FilesystemKeyStore

@@ -107,15 +107,23 @@ class QuickCertCli:
             self.display_configuration()
         elif args.cmd == 'random':
             get_random(self.password_generator, args.length, args.charset)
-        elif args.cmd == 'list_keys':
+        elif args.cmd == 'list-keys':
             list_keys(self.key_store, json_format=args.json)
-        elif args.cmd == 'delete_key':
+        elif args.cmd == 'delete-key':
             delete_key(key_store=self.key_store,
                        key_name=args.key_name)
-        elif args.cmd == 'get_key':
+        elif args.cmd == 'get-key':
+            if args.no_password:
+                password = None
+            elif args.password:
+                password = args.password
+            else:
+                password = prompt_for_password()
+
             get_key(key_store=self.key_store,
-                    key_name=args.key_name)
-        elif args.cmd == 'create_key':
+                    key_name=args.key_name,
+                    password=password)
+        elif args.cmd == 'create-key':
             if args.no_password:
                 password = None
             elif args.password:
@@ -129,34 +137,31 @@ class QuickCertCli:
                        key_name=args.name,
                        password=password,
                        store=(not args.no_store))
-        elif args.cmd == 'create_cert':
-            if args.no_password:
-                password = None
-            elif args.password:
-                password = args.password
-            else:
-                password = prompt_for_password()
-
+        elif args.cmd == 'create-cert':
             create_cert(
                 cert_minter=self.cert_minter,
                 cert_store=self.cert_store,
                 key_store=self.key_store,
                 cert_path=args.cert_path,
                 common_name=args.common_name,
-                key_name=args.key_name,
-                key_password=password,
+                issuer_key_name=args.issuer_key_name,
+                issuer_key_password=args.issuer_key_password,
+                issuer_key_no_password=args.issuer_key_no_password,
+                signing_key_name=args.signing_key_name,
+                signing_key_password=args.signing_key_password,
+                signing_key_no_password=args.signing_key_no_password,
                 country=args.country,
                 state=args.state,
                 locality=args.locality,
                 organization=args.organization,
                 store=(not args.no_store)
             )
-        elif args.cmd == 'list_certs':
+        elif args.cmd == 'list-certs':
             list_certs(cert_store=self.cert_store, json_format=args.json)
-        elif args.cmd == 'get_cert':
+        elif args.cmd == 'get-cert':
             get_cert(cert_store=self.cert_store,
-                       cert_path=args.cert_path)
-        elif args.cmd == 'delete_cert':
+                     cert_path=args.cert_path)
+        elif args.cmd == 'delete-cert':
             delete_cert(cert_store=self.cert_store,
                         cert_path=args.cert_path)
         else:

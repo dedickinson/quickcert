@@ -44,17 +44,17 @@ class RsaPrivateKey(implements(PrivateKey)):
     @classmethod
     def deserialize(cls, key_path: Path, password=None) -> PrivateKey:
         if password:
-            p=password.encode()
+            p = password.encode()
         else:
-            p=None
-        
+            p = None
+
         with open(key_path, "rb") as key_file:
             private_key = serialization.load_pem_private_key(
                 key_file.read(),
                 password=p,
                 backend=default_backend()
             )
-        
+
         return RsaPrivateKey(private_key)
 
     def __init__(self, rsa_key):
@@ -72,9 +72,9 @@ class RsaPrivateKey(implements(PrivateKey)):
             enc = BestAvailableEncryption(password=password.encode())
         else:
             enc = NoEncryption()
-        return self.key.private_bytes(encoding=Encoding.PEM,
-                                      format=PrivateFormat.PKCS8,
-                                      encryption_algorithm=enc)
+        return self.underlying_key.private_bytes(encoding=Encoding.PEM,
+                                                 format=PrivateFormat.PKCS8,
+                                                 encryption_algorithm=enc)
 
     @property
     def key_size(self) -> int:
