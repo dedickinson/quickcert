@@ -106,7 +106,8 @@ class x509CertificateNameAttributes(implements(CertificateNameAttributes)):
         self._common_name = common_name
 
     @staticmethod
-    def extract_attributes(certificate: 'x509Certificate') -> typing.Tuple[CertificateNameAttributes, CertificateNameAttributes]:
+    def extract_attributes(
+            certificate: 'x509Certificate') -> typing.Tuple[CertificateNameAttributes, CertificateNameAttributes]:
         def list_get(l, i=0, default=None):
             try:
                 return l[i].value
@@ -245,12 +246,13 @@ class x509Certificate(implements(Certificate)):
 class x509CertificateMinter(implements(CertificateMinter)):
 
     @staticmethod
-    def prepare_mint_args(certificate_type: x509AbstractCertificateType,
-                          issuer_key: PrivateKey,
-                          issuer: x509CertificateNameAttributes,
-                          csr=None,
-                          hash_algorithm: HashAlgorithm = DEFAULT_HASH_ALGORITHM,
-                          duration_days: int = 365):
+    def prepare_mint_args(
+            certificate_type: x509AbstractCertificateType,
+            issuer_key: PrivateKey,
+            issuer: x509CertificateNameAttributes,
+            csr=None,
+            hash_algorithm: HashAlgorithm = DEFAULT_HASH_ALGORITHM,
+            duration_days: int = 365):
 
         return {
             'certificate_type': certificate_type,

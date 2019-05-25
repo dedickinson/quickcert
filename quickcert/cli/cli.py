@@ -13,10 +13,17 @@ from appdirs import user_config_dir, user_data_dir
 from ..__version__ import (__copyright__, __description__, __license__,
                            __title__, __version__)
 from ..interfaces import PrivateKey
-from ..implementations import BasicPasswordGenerator, FilesystemKeyStore, RsaKeyMinter, FilesystemCertificateStore, x509CertificateMinter
+from ..implementations import (
+    BasicPasswordGenerator,
+    FilesystemKeyStore,
+    RsaKeyMinter,
+    FilesystemCertificateStore,
+    x509CertificateMinter)
 
-from .cli_cert import configure_cli_cert_parser, list_certs, create_cert, delete_cert, get_cert
-from .cli_key import configure_cli_key_parser, create_key, list_keys, delete_key, get_key
+from .cli_cert import (configure_cli_cert_parser,
+                       list_certs, create_cert, delete_cert, get_cert)
+from .cli_key import (configure_cli_key_parser, create_key,
+                      list_keys, delete_key, get_key)
 from .cli_random import configure_cli_random_parser, get_random
 from .cli_util import prompt_for_password
 
@@ -28,7 +35,10 @@ class QuickCertCli:
 
     def __init__(self):
         self.configuration_dir = Path(
-            os.getenv(QuickCertCli.ENV_CONFIG_DIR, user_config_dir()), __title__)
+            os.getenv(
+                QuickCertCli.ENV_CONFIG_DIR,
+                user_config_dir()),
+            __title__)
 
         self.data_dir = Path(
             os.getenv(QuickCertCli.ENV_DATA_DIR, user_data_dir()), __title__)
@@ -51,13 +61,12 @@ class QuickCertCli:
         shared_arg_dict = {
             'data_dir': {
                 'default': self.data_dir,
-                'help': 'The base directory for key and certificate storage. Can also be set using the {} environment variable'.format(QuickCertCli.ENV_DATA_DIR)
-            },
+                'help': 'The base directory for key and certificate storage. Can also be set using the {} environment variable'.format(
+                    QuickCertCli.ENV_DATA_DIR)},
             'config_dir': {
                 'default': self.configuration_dir,
-                'help': 'The configuration file path. Can also be set using the {} environment variable'.format(QuickCertCli.ENV_CONFIG_DIR)
-            }
-        }
+                'help': 'The configuration file path. Can also be set using the {} environment variable'.format(
+                    QuickCertCli.ENV_CONFIG_DIR)}}
 
         parser = argparse.ArgumentParser(
             formatter_class=argparse.ArgumentDefaultsHelpFormatter,

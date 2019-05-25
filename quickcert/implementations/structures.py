@@ -10,6 +10,7 @@ from ..interfaces import (Certificate, CertificateDetails,
 
 from .x509_minter import X509_CERTIFICATE_TYPES
 
+
 class CertificateDetailsImpl(implements(CertificateDetails)):
 
     def __init__(self,
@@ -33,7 +34,8 @@ class CertificateDetailsImpl(implements(CertificateDetails)):
         return self._certificate_type
 
     @classmethod
-    def determine_certificate_details(cls, cert_path: str) -> CertificateDetails:
+    def determine_certificate_details(
+            cls, cert_path: str) -> CertificateDetails:
         def _parse_certificate_path(elements: List[str]) -> Dict[str, str]:
             if len(elements) == 1:
                 # This is a shortcut and assumes a root cert is provided
@@ -43,7 +45,7 @@ class CertificateDetailsImpl(implements(CertificateDetails)):
                 result = {elements[0]: elements[1]}
             else:
                 del elements[0]
-                result = {k: v for k, v in zip(*[iter(elements)]*2)}
+                result = {k: v for k, v in zip(*[iter(elements)] * 2)}
 
             return result
 
@@ -63,8 +65,9 @@ class CertificateDetailsImpl(implements(CertificateDetails)):
             cert_name = path_elements['root']
             cert_type = X509_CERTIFICATE_TYPES['root']
         else:
-            raise ValueError("The certificate type could not be determined ({})".format(
-                path_elements.keys()))
+            raise ValueError(
+                "The certificate type could not be determined ({})".format(
+                    path_elements.keys()))
 
         if len(elements) > 2:
             cert_issuer = cls.determine_certificate_details(

@@ -19,10 +19,12 @@ def configure_cli_random_parser(parser):
     parser_genrnd.add_argument(
         '--charset',
         type=str,
-        default=string.ascii_uppercase + string.ascii_lowercase + string.digits + '_$#%-!',
+        default=string.ascii_uppercase +
+        string.ascii_lowercase +
+        string.digits +
+        '_$#%-!',
         required=False,
-        help='the character set to use in the password'
-    )
+        help='the character set to use in the password')
 
 
 def get_random(password_generator, length: int, charset: str) -> str:

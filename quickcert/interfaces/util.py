@@ -28,7 +28,13 @@ class Tree:
                 'child_nodes': [Tree.transform(n) for n in tree.child_nodes]
             }
 
-    def _print_node(self, padding_char=' ', padding_width=0, include_leaves=True, include_root=True, compact=False) -> str:
+    def _print_node(
+            self,
+            padding_char=' ',
+            padding_width=0,
+            include_leaves=True,
+            include_root=True,
+            compact=False) -> str:
         padding = padding_char * padding_width
 
         if include_root:
@@ -42,7 +48,7 @@ class Tree:
         else:
             output = ''
 
-        padding = padding_char * (padding_width+2)
+        padding = padding_char * (padding_width + 2)
 
         if include_leaves:
             count = len(self.leaf_nodes)
@@ -70,5 +76,12 @@ class Tree:
 
         return output
 
-    def format_string(self, include_leaves=True, include_root=True, compact=False) -> str:
-        return self._print_node(include_leaves=include_leaves, include_root=include_root, compact=compact)
+    def format_string(
+            self,
+            include_leaves=True,
+            include_root=True,
+            compact=False) -> str:
+        return self._print_node(
+            include_leaves=include_leaves,
+            include_root=include_root,
+            compact=compact)

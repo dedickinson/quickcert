@@ -34,28 +34,33 @@ class FilesystemCertTree(Tree):
         self._ignore_list = ignore_list
         self._construct_tree()
         self._dir_icon = '\U0001F4DC'
-        #self._dir_join_icon = '\U00002533'
+        # self._dir_join_icon = '\U00002533'
         self._dir_join_icon = ''
-        #self._dir_join_icon_base = '\U00002501'
+        # self._dir_join_icon_base = '\U00002501'
         self._dir_join_icon_base = ''
         self._dir_suffix = ''
         self._pipe_icon = '\U00002503'
         self._file_icon = '\U0001F4C4'
-        #self._file_icon_base = '\U00002517'
+        # self._file_icon_base = '\U00002517'
         self._file_icon_base = '\U0001F4C4'
-        #self._file_join_icon = '\U00002501'
+        # self._file_join_icon = '\U00002501'
         self._file_join_icon = ' '
 
     def _construct_tree(self):
 
-        for file in sorted(os.scandir(self._dir), key=lambda f: f.name.lower()):
+        for file in sorted(
+                os.scandir(
+                    self._dir),
+                key=lambda f: f.name.lower()):
             if file.name in self._ignore_list:
                 continue
 
             if file.is_dir():
-                self.add_child_node(FilesystemCertTree(name=file.name,
-                                                       dir=file,
-                                                       ignore_list=self._ignore_list))
+                self.add_child_node(
+                    FilesystemCertTree(
+                        name=file.name,
+                        dir=file,
+                        ignore_list=self._ignore_list))
             else:
                 self.add_leaf_node(file.name)
 
@@ -87,15 +92,24 @@ class FilesystemCertificateStore(implements(CertificateStore)):
 
         if entry_details.issuer:
             parent = self._get_cert_path(entry_details.issuer)
-            return Path(self.dir, parent, entry_details.certificate_type.name, entry_details.name)
+            return Path(
+                self.dir,
+                parent,
+                entry_details.certificate_type.name,
+                entry_details.name)
         else:
-            return Path(self.dir, entry_details.certificate_type.name, entry_details.name)
+            return Path(
+                self.dir,
+                entry_details.certificate_type.name,
+                entry_details.name)
 
     def _get_cert_file_name(self, entry_details: CertificateDetails) -> str:
         return "{}.{}".format(entry_details.name, self.cert_file_extension)
 
     def _get_cert_file_path(self, entry_details: CertificateDetails) -> Path:
-        return Path(self._get_cert_path(entry_details), self._get_cert_file_name(entry_details))
+        return Path(
+            self._get_cert_path(entry_details),
+            self._get_cert_file_name(entry_details))
 
     def list(self) -> Tree:
         tree = FilesystemCertTree(name='', dir=self.dir)
@@ -108,13 +122,19 @@ class FilesystemCertificateStore(implements(CertificateStore)):
         else:
             return False
 
-    def _load_certificate_file(self, certificate_file_path: Path) -> Certificate:
+    def _load_certificate_file(
+            self, certificate_file_path: Path) -> Certificate:
         with open(certificate_file_path, "rb") as cert_file:
             cert_data = cert_file.read()
 
-        return x509Certificate(x509.load_pem_x509_certificate(cert_data, default_backend()))
+        return x509Certificate(
+            x509.load_pem_x509_certificate(
+                cert_data, default_backend()))
 
-    def _store_certificate_file(self, certificate: Certificate, certificate_file_path: Path):
+    def _store_certificate_file(
+            self,
+            certificate: Certificate,
+            certificate_file_path: Path):
 
         with open(os.open(certificate_file_path, os.O_CREAT | os.O_WRONLY, self.file_mode), "wb") as cert_file:
             cert_file.write(certificate.public_bytes(
@@ -152,13 +172,12 @@ class FilesystemCertificateStore(implements(CertificateStore)):
         if not self.exists(entry.details):
             raise CertificateEntryNotFoundException(
                 "A certificate of type {} with name {} could not be found".format(
-                    entry.details.certificate_type.name,
-                    entry.details.name
-                ))
+                    entry.details.certificate_type.name, entry.details.name))
         cert_file_path = self._get_cert_file_path(entry.details)
         cert = self._load_certificate_file(cert_file_path)
 
-        return CertificateStoreEntryImpl(certificate=cert, details=entry.details)
+        return CertificateStoreEntryImpl(
+            certificate=cert, details=entry.details)
 
     def remove(self, entry: CertificateStoreEntry):
         path = self._get_cert_path(entry.details)

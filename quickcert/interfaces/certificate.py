@@ -1,3 +1,9 @@
+"""
+quickcert.interfaces.certificate
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+"""
+
 import typing
 import datetime
 
@@ -8,6 +14,8 @@ from .util import Tree
 
 
 class CertificateType(Interface):
+    """The type of certificate
+    """
 
     @property
     def name(self) -> str:
@@ -37,21 +45,42 @@ class CertificateNameAttributes(Interface):
 
 
 class Certificate(Interface):
+    """Represents a certificate"""
 
     @property
-    def serial_number(self) -> int: pass
+    def serial_number(self) -> int:
+        """The certificate's serial number
+
+            :type: int
+        """
+        pass
 
     @property
     def version(self) -> str: pass
 
     @property
-    def not_valid_before(self) -> datetime: pass
+    def not_valid_before(self) -> datetime:
+        """Indicates the start date for the certificate
+
+        :type: datetime.datetime
+        """
+        pass
 
     @property
-    def not_valid_after(self) -> datetime: pass
+    def not_valid_after(self) -> datetime:
+        """Indicates the end date for the certificate
+
+        :type: datetime.datetime
+        """
+        pass
 
     @property
-    def public_key(self) -> PublicKey: pass
+    def public_key(self) -> PublicKey:
+        """The public key
+
+        :type: PublicKey
+        """
+        pass
 
     @property
     def issuer(self) -> CertificateNameAttributes: pass

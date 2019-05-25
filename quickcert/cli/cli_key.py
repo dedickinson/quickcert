@@ -21,9 +21,10 @@ def configure_cli_key_parser(parser, default_key_size: int = 2048):
                                    default=default_key_size,
                                    help='the key size')
 
-    parser_create_key.add_argument('--no-store',
-                                   action='store_true',
-                                   help='don\'t store the key, just send it to stdout')
+    parser_create_key.add_argument(
+        '--no-store',
+        action='store_true',
+        help='don\'t store the key, just send it to stdout')
 
     parser_create_key_pwdgrp = parser_create_key.add_mutually_exclusive_group(
         required=False)
@@ -32,9 +33,10 @@ def configure_cli_key_parser(parser, default_key_size: int = 2048):
                                           type=str,
                                           help='the password for the key')
 
-    parser_create_key_pwdgrp.add_argument('--no-password',
-                                          action='store_true',
-                                          help="don't use password for the key")
+    parser_create_key_pwdgrp.add_argument(
+        '--no-password',
+        action='store_true',
+        help="don't use password for the key")
 
     list_keys = parser.add_parser(
         'list-keys',
@@ -64,15 +66,21 @@ def configure_cli_key_parser(parser, default_key_size: int = 2048):
         required=False)
 
     parser_get_key_pwdgrp.add_argument('--password',
-                                          type=str,
-                                          help='the password for the key')
+                                       type=str,
+                                       help='the password for the key')
 
     parser_get_key_pwdgrp.add_argument('--no-password',
-                                          action='store_true',
-                                          help="don't use password for the key")
+                                       action='store_true',
+                                       help="don't use password for the key")
 
 
-def create_key(key_minter: KeyMinter, key_store: KeyStore, key_name: str, key_size: int, password: str, store: bool):
+def create_key(
+        key_minter: KeyMinter,
+        key_store: KeyStore,
+        key_name: str,
+        key_size: int,
+        password: str,
+        store: bool):
     key_minter.prepare_mint_args(key_size=key_size)
     key: PrivateKey = key_minter.mint()
     if store:
@@ -84,7 +92,7 @@ def create_key(key_minter: KeyMinter, key_store: KeyStore, key_name: str, key_si
         print(str(key.public_key.serialize(), 'utf-8'))
 
 
-def list_keys(key_store: KeyStore, json_format:bool):
+def list_keys(key_store: KeyStore, json_format: bool):
     if json_format:
         print(json.dumps({
             'keys': key_store.list()

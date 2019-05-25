@@ -5,11 +5,8 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding, rsa
 from cryptography.hazmat.primitives.asymmetric.padding import AsymmetricPadding
-from cryptography.hazmat.primitives.serialization import (BestAvailableEncryption,
-                                                          NoEncryption,
-                                                          Encoding,
-                                                          PrivateFormat,
-                                                          PublicFormat)
+from cryptography.hazmat.primitives.serialization import (
+    BestAvailableEncryption, NoEncryption, Encoding, PrivateFormat, PublicFormat)
 
 from interface import implements
 
@@ -87,9 +84,10 @@ class RsaPrivateKey(implements(PrivateKey)):
 
 class RsaKeyMinter(implements(KeyMinter)):
 
-    def prepare_mint_args(self,
-                          key_size: int = CONST_DEFAULT_KEY_SIZE,
-                          key_public_exponent=CONST_DEFAULT_KEY_PUBLIC_EXPONENT):
+    def prepare_mint_args(
+            self,
+            key_size: int = CONST_DEFAULT_KEY_SIZE,
+            key_public_exponent=CONST_DEFAULT_KEY_PUBLIC_EXPONENT):
         return {
             'key_size': key_size,
             'key_public_exponent': key_public_exponent

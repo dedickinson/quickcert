@@ -46,10 +46,10 @@ class KeyStore(Interface):
     def add(self, key: PrivateKey, key_name: str, password: str):
         pass
 
-    def exists(self, key_name:str) -> bool:
+    def exists(self, key_name: str) -> bool:
         pass
 
-    def get(self, key_name: str, password: str=None) -> PrivateKey:
+    def get(self, key_name: str, password: str = None) -> PrivateKey:
         pass
 
     def remove(self, key_name: str):

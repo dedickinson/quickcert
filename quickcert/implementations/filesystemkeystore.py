@@ -9,6 +9,7 @@ from ..interfaces import (PrivateKey,
 
 from .rsa_minter import RsaPrivateKey
 
+
 class FilesystemKeyStore(implements(KeyStore)):
 
     _BASE_DIR = 'keystore'
@@ -39,7 +40,7 @@ class FilesystemKeyStore(implements(KeyStore)):
         with open(os.open(self._key_path(key_name), flags=os.O_CREAT | os.O_WRONLY, mode=self.file_mode), "wb") as key_file:
             key_file.write(key.serialize(password))
 
-        #with open(os.open(self._public_key_path(key_name), flags=os.O_CREAT | os.O_WRONLY, mode=0o444), "wb") as key_file:
+        # with open(os.open(self._public_key_path(key_name), flags=os.O_CREAT | os.O_WRONLY, mode=0o444), "wb") as key_file:
         #    key_file.write(key.public_key.serialize())
 
     def exists(self, key_name: str) -> bool:
@@ -48,7 +49,7 @@ class FilesystemKeyStore(implements(KeyStore)):
 
         return False
 
-    def get(self, key_name: str, password: str=None) -> PrivateKey:
+    def get(self, key_name: str, password: str = None) -> PrivateKey:
         if not self.exists(key_name):
             return None
 
@@ -57,7 +58,11 @@ class FilesystemKeyStore(implements(KeyStore)):
     def remove(self, key_name: str):
         if self.exists(key_name):
             self._key_path(key_name).unlink()
-            #self._public_key_path(key_name).unlink()
+            # self._public_key_path(key_name).unlink()
 
     def list(self) -> typing.List[str]:
-        return [os.path.splitext(key.name)[0] for key in os.scandir(self.dir) if os.path.isfile(key) and os.path.splitext(key.name)[1] == '.key']
+        return [
+            os.path.splitext(
+                key.name)[0] for key in os.scandir(
+                self.dir) if os.path.isfile(key) and os.path.splitext(
+                key.name)[1] == '.key']

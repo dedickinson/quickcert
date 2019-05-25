@@ -1,4 +1,4 @@
-#PHONY=docs
+.PHONY: docs
 
 .DEFAULT_GOAL := init
 
@@ -14,7 +14,7 @@ publish: package
 	
 check:
 	pipenv check
-	pipenv run pycodestyle quickcert/*
+	pipenv run pycodestyle --max-line-length=120 quickcert/*
 
 lint:
 	pipenv run pylint quickcert/*.py
@@ -28,12 +28,13 @@ ci:
 format:
 	pipenv run autopep8 --in-place --aggressive --aggressive --recursive quickcert/
 
-# docs:
-# 	cd docs && make html
+docs:
+	cd docs && make html
 
 clean:
 	pipenv clean
 	rm -rf build dist .egg .eggs quickcert.egg-info
+	cd docs && make clean
 
 clean-tox:
 	rm -rf .tox

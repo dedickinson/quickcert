@@ -1,16 +1,18 @@
 
 class InvalidCertificateTypeException(Exception):
-    def __init__(self, message):
-        super().__init__(message)
+    """
+    Unable to handle requested
+    :class:`CertificateType <quickcert.interfaces.CertificateType>`
+    """
+
 
 class CertificateEntryNotFoundException(Exception):
-    def __init__(self, message):
-        super().__init__(message)
+    """The requested certificate can't be found"""
+
 
 class CertificateAlreadyExistsException(Exception):
-    def __init__(self, message):
-        super().__init__(message)
+    """The requested certificate already exists"""
+
 
 class IssuerDoesNotExistException(Exception):
-    def __init__(self, message):
-        super().__init__(message)
+    """The certificate issuer doesn't exist"""

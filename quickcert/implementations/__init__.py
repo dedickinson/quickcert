@@ -7,7 +7,7 @@ from .x509_minter import (x509CertificateMinter,
                           x509CertificateNameAttributes,
                           x509ClientCertificateType,
                           x509IntermediateCertificateType,
-                          x509RootCertificateType, 
+                          x509RootCertificateType,
                           x509ServerCertificateType,
                           X509_CERTIFICATE_TYPES,
                           x509SigningRequest)
