@@ -1,4 +1,13 @@
+"""General utility classes
+"""
+
+
 class Tree:
+    """Basic tree structure with handy formatting
+
+        I'm sorry that this is a concrete implementation
+        inside an interfaces package
+    """
 
     def __init__(self, name: str):
         self.name = str(name)
@@ -14,9 +23,17 @@ class Tree:
         self._file_join_icon = '-'
 
     def add_child_node(self, tree: 'Tree'):
+        """ Adds a child node (which is itself a tree)
+
+            :param Tree tree: The child node being added
+        """
         self.child_nodes.append(tree)
 
     def add_leaf_node(self, name: str):
+        """ Adds a leaf node
+
+            :param str name: The value of the leaf node
+        """
         self.leaf_nodes.append(name)
 
     @staticmethod

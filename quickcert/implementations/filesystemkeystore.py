@@ -33,7 +33,7 @@ class FilesystemKeyStore(implements(KeyStore)):
     def _public_key_path(self, key_name: str) -> Path:
         return Path(self.dir, "{}.pub".format(key_name))
 
-    def add(self, key: PrivateKey, key_name: str, password: str):
+    def add(self, key: PrivateKey, key_name: str, password: str = None):
         if self.exists(key_name):
             raise ValueError("The key {} already exists".format(key_name))
 

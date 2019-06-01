@@ -1,3 +1,6 @@
+"""Module for creating (minting) RSA Keys
+"""
+
 import typing
 from pathlib import Path
 
@@ -21,7 +24,12 @@ CONST_DEFAULT_SIGNING_PADDING = padding.PSS(
 
 
 class RsaPublicKey(implements(PublicKey)):
-    def __init__(self, rsa_public_key):
+    """An RSA Public Key
+
+    Implements :class:`PublicKey <quickcert.interfaces.PublicKey>`
+    """
+
+    def __init__(self, rsa_public_key: rsa.RSAPublicKey):
         self.key = rsa_public_key
 
     def serialize(self) -> bytes:
@@ -37,9 +45,25 @@ class RsaPublicKey(implements(PublicKey)):
 
 
 class RsaPrivateKey(implements(PrivateKey)):
+    """An RSA Private Key
+
+    Implements :class:`PrivateKey <quickcert.interfaces.PrivateKey>`
+    """
+
+    def __init__(self, rsa_key: rsa.RSAPrivateKey):
+        self._key = rsa_key
 
     @classmethod
-    def deserialize(cls, key_path: Path, password=None) -> PrivateKey:
+    def deserialize(cls, key_path: Path, password: str = None) -> PrivateKey:
+        """Loads a private key from a file
+
+        :param key_path: the file path of the key file
+        :type key_path: Path
+        :param password: the key password, defaults to None
+        :type password: str, optional
+        :return: the deserialized key
+        :rtype: PrivateKey
+        """
         if password:
             p = password.encode()
         else:
@@ -54,9 +78,6 @@ class RsaPrivateKey(implements(PrivateKey)):
 
         return RsaPrivateKey(private_key)
 
-    def __init__(self, rsa_key):
-        self._key = rsa_key
-
     @property
     def public_key(self) -> PublicKey:
         return RsaPublicKey(self._key.public_key())
@@ -64,7 +85,7 @@ class RsaPrivateKey(implements(PrivateKey)):
     def decrypt(self, ciphertext: bytes,
                 padding: AsymmetricPadding) -> bytes: pass
 
-    def serialize(self, password: str) -> bytes:
+    def serialize(self, password: str = None) -> bytes:
         if password:
             enc = BestAvailableEncryption(password=password.encode())
         else:
@@ -83,11 +104,22 @@ class RsaPrivateKey(implements(PrivateKey)):
 
 
 class RsaKeyMinter(implements(KeyMinter)):
+    """Used to create an RSA key
+    """
 
     def prepare_mint_args(
             self,
             key_size: int = CONST_DEFAULT_KEY_SIZE,
-            key_public_exponent=CONST_DEFAULT_KEY_PUBLIC_EXPONENT):
+            key_public_exponent: int = CONST_DEFAULT_KEY_PUBLIC_EXPONENT) -> dict:
+        """Sets up the minting arguments
+
+        :param key_size: the key size in bits, defaults to CONST_DEFAULT_KEY_SIZE
+        :type key_size: int, optional
+        :param key_public_exponent: an attribute in key generation, defaults to CONST_DEFAULT_KEY_PUBLIC_EXPONENT
+        :type key_public_exponent: int, optional
+        :return: a set of parameters to pass to :meth:`mint`
+        :rtype: dict
+        """
         return {
             'key_size': key_size,
             'key_public_exponent': key_public_exponent
@@ -95,6 +127,13 @@ class RsaKeyMinter(implements(KeyMinter)):
 
     def mint(self,
              **kwargs) -> PrivateKey:
+        """Generates an RSA key
+
+        Use :meth:`prepare_mint_args` to prepare the ``**kwargs``
+
+        :return: an RSA private key
+        :rtype: PrivateKey
+        """
 
         key_public_exponent = kwargs.get(
             'key_public_exponent', CONST_DEFAULT_KEY_PUBLIC_EXPONENT)

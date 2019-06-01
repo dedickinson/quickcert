@@ -21,6 +21,11 @@ from ..exceptions import CertificateEntryNotFoundException
 
 
 def configure_cli_cert_parser(parser: argparse.ArgumentParser):
+    """Configures the arg parser for certificate-related activities
+
+    :param parser: the base argparser to add to
+    :type parser: argparse.ArgumentParser
+    """
     cert_type_choices = [
         cert_type for cert_type in X509_CERTIFICATE_TYPES.keys()]
 
@@ -157,6 +162,13 @@ For example:
 
 
 def get_certificate_details(cert_path: str) -> CertificateDetailsImpl:
+    """Gets the details of the certificate
+
+    :param cert_path: the certificate path
+    :type cert_path: str
+    :return: the certificate details object
+    :rtype: CertificateDetailsImpl
+    """
 
     return CertificateDetailsImpl.determine_certificate_details(cert_path)
 
@@ -189,40 +201,61 @@ def create_cert(
         No signing_key_name is needed.
 
     ``/root/myroot``
-        A root CA in which the issuer and the subject are the same
+        A root CA in which the issuer and the subject are the same.
         No signing_key_name is needed.
 
     ``/root/myroot/intermediate/myintermediate``
-        An intermediate CA with the issuer being ``/root/myroot``
+        An intermediate CA with the issuer being ``/root/myroot``.
         A signing_key_name is needed
 
     ``/root/myroot/intermediate/myintermediate/server/myserver``
-        A server certificate with the issuer being ``/root/myroot/intermediate/myintermediate``
+        A server certificate with the issuer being ``/root/myroot/intermediate/myintermediate``.
         A signing_key_name is needed
 
     ``/root/myroot/server/myserver``
-        A server certificate with the issuer being ``/root/myroot``
+        A server certificate with the issuer being ``/root/myroot``.
         A signing_key_name is needed
 
 
-    Arguments:
-        cert_store {CertificateStore} -- [description]
-        key_store {KeyStore} -- [description]
-        cert_minter {CertificateMinter} -- [description]
-        cert_path {str} -- [description]
-        issuer_key_name {str} -- [description]
-        issuer_key_password {str} -- [description]
-
-    Keyword Arguments:
-        signing_key_name {str} -- [description] (default: {None})
-        signing_key_password {str} -- [description] (default: {None})
-        country {str} -- [description] (default: {None})
-        state {str} -- [description] (default: {None})
-        locality {str} -- [description] (default: {None})
-        organization {str} -- [description] (default: {None})
-        common_name {str} -- [description] (default: {None})
-        duration_days {int} -- [description] (default: {365})
-        store {bool} -- [description] (default: {True})
+    :param cert_store: the certificate store in which to create the cert
+        as well as holds any issuer certs
+    :type cert_store: CertificateStore
+    :param key_store: the key store holding the various keys
+    :type key_store: KeyStore
+    :param cert_minter: the cert minter
+    :type cert_minter: CertificateMinter
+    :param cert_path: the path of the certificate
+    :type cert_path: str
+    :param issuer_key_name: the key used to sign the certificate
+    :type issuer_key_name: str
+    :param issuer_key_password: the issuer key's password
+    :type issuer_key_password: str
+    :param issuer_key_no_password: indicates that the issuer key doesn't have a password
+        , defaults to False
+    :type issuer_key_no_password: bool, optional
+    :param signing_key_name: the name of the signing key, defaults to None
+    :type signing_key_name: str, optional
+    :param signing_key_password: the password for the signing key
+        , defaults to None
+    :type signing_key_password: str, optional
+    :param signing_key_no_password: indicates if the issuer key doesn't have a password
+        , defaults to False
+    :type signing_key_no_password: bool, optional
+    :param country: the 2-letter country code used in the cert subject, defaults to None
+    :type country: str, optional
+    :param state: used in the cert subject, defaults to None
+    :type state: str, optional
+    :param locality: used in the cert subject, defaults to None
+    :type locality: str, optional
+    :param organization: used in the cert subject, defaults to None
+    :type organization: str, optional
+    :param common_name: used in the cert subject, defaults to None
+    :type common_name: str, optional
+    :param duration_days: the lifespan of the cert in days, defaults to 365
+    :type duration_days: int, optional
+    :param store: if set to False, the certificate will just be sent to stdout and not stored
+        , defaults to True
+    :type store: bool, optional
     """
 
     if not issuer_key_name:
@@ -350,6 +383,15 @@ def create_cert(
 
 
 def list_certs(cert_store: CertificateStore, json_format: bool):
+    """ Lists all certificates in the provided CertificateStore
+
+    The output is displayed in a nice tree format
+
+    :param cert_store: the certificate store
+    :type cert_store: CertificateStore
+    :param json_format: output in json
+    :type json_format: bool
+    """
 
     tree = cert_store.list()
 
@@ -361,6 +403,13 @@ def list_certs(cert_store: CertificateStore, json_format: bool):
 
 
 def get_cert(cert_store: CertificateStore, cert_path: str):
+    """Gets a certificate based on the path
+
+    :param cert_store: the certificate store
+    :type cert_store: CertificateStore
+    :param cert_path: the certificate path
+    :type cert_path: str
+    """
     entry = CertificateStoreEntryImpl(
         details=get_certificate_details(cert_path),
         certificate=None)
@@ -373,6 +422,13 @@ def get_cert(cert_store: CertificateStore, cert_path: str):
 
 
 def delete_cert(cert_store: CertificateStore, cert_path: str):
+    """Deletes the certificate designated in the path
+
+    :param cert_store: the certificate store
+    :type cert_store: CertificateStore
+    :param cert_path: the certificate path
+    :type cert_path: str
+    """
     entry = CertificateStoreEntryImpl(
         details=get_certificate_details(cert_path),
         certificate=None)

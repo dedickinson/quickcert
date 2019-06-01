@@ -29,11 +29,17 @@ from .cli_util import prompt_for_password
 
 
 class QuickCertCli:
+    """ The core CLI class """
 
     ENV_CONFIG_DIR = 'QCERT_CONFIG_DIR'
     ENV_DATA_DIR = 'QCERT_DATA_DIR'
 
     def __init__(self):
+        """ Initial config for the CLI
+
+            TODO: allow user to change the Key Store type
+            TODO: allow user to change the Certificate Store type
+        """
         self.configuration_dir = Path(
             os.getenv(
                 QuickCertCli.ENV_CONFIG_DIR,
@@ -51,12 +57,15 @@ class QuickCertCli:
         self.cert_minter = x509CertificateMinter()
 
     def initialise(self):
-        # TODO: Log this
+        """ Performs any required setup
+        """
         self.data_dir.mkdir(mode=0o700, exist_ok=True)
         self.key_store.initialise(dir=self.data_dir)
         self.cert_store.initialise(dir=self.data_dir)
 
     def create_argparser(self):
+        """ Configures the argparser
+        """
 
         shared_arg_dict = {
             'data_dir': {
@@ -107,6 +116,12 @@ class QuickCertCli:
         print("Certificate store: {}".format(self.cert_store.dir))
 
     def handle_request(self, args):
+        """ Processes the user's request
+
+            Note that the :meth:initialise method is always called
+            so the user never needs to explicitly do this
+        """
+
         if args.data_dir:
             self.data_dir = Path(args.data_dir)
 
@@ -177,6 +192,11 @@ class QuickCertCli:
             sys.exit("Unknown command")
 
     def run(self):
+        """ This is the main CLI method
+
+            Preps the argparser and handles the user
+            request
+        """
         parser = self.create_argparser()
 
         # Refer to https://github.com/kislyuk/argcomplete

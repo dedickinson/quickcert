@@ -1,3 +1,5 @@
+""" Used to generate x509 certificates
+"""
 import typing
 from datetime import datetime, timedelta
 
@@ -11,30 +13,58 @@ from interface import implements
 from ..interfaces import (Certificate, CertificateMinter, CertificateType,
                           CertificateNameAttributes, PrivateKey, PublicKey)
 
-
+#: The default hashing algorithm
 DEFAULT_HASH_ALGORITHM = SHA256()
 
 CERTIFICATE_TYPE_ROOT_NAME = 'root'
+
 CERTIFICATE_TYPE_INTERMEDIATE_NAME = 'intermediate'
 CERTIFICATE_TYPE_SERVER_NAME = 'server'
 CERTIFICATE_TYPE_CLIENT_NAME = 'client'
 
 
 class x509AbstractCertificateType(implements(CertificateType)):
+    """A base class for x509 certificate types
+
+    It's probably not the best name but this is the base/abstract
+    type for the concrete implementations of x509 cert types.
+    For example, a root certificate is based on this type and
+    implements the extensions particular to it.
+
+    Implements :class:`CertificateType <quickcert.interfaces.CertificateType>`
+    """
+
     def __init__(self, name: str, extensions: typing.List):
+        """Constructor
+
+        :param name: the name of the certificate type
+        :type name: str
+        :param extensions: the certificate extensions
+        :type extensions: typing.List
+        """
         self._name = name
         self._extensions = extensions
 
     @property
     def name(self) -> str:
+        """The certificate type name
+
+        :type: str
+        """
         return self._name
 
     @property
     def extensions(self) -> typing.List:
+        """A list of extensions for the type
+
+        :type: typing.List
+        """
         return self._extensions
 
 
 class x509RootCertificateType(x509AbstractCertificateType):
+    """An x509 Root certificate
+    """
 
     def __init__(self):
         super().__init__(
@@ -47,6 +77,9 @@ class x509RootCertificateType(x509AbstractCertificateType):
 
 
 class x509IntermediateCertificateType(x509AbstractCertificateType):
+    """An x509 Intermediate certificate
+    """
+
     def __init__(self):
         super().__init__(
             name=CERTIFICATE_TYPE_INTERMEDIATE_NAME,
@@ -59,6 +92,11 @@ class x509IntermediateCertificateType(x509AbstractCertificateType):
 
 
 class x509ServerCertificateType(x509AbstractCertificateType):
+    """An x509 server certificate
+
+    TODO: Make sure the server cert meets 
+        https://tools.ietf.org/html/rfc2818.html#section-3
+    """
 
     def __init__(self):
         super().__init__(
@@ -71,6 +109,9 @@ class x509ServerCertificateType(x509AbstractCertificateType):
 
 
 class x509ClientCertificateType(x509AbstractCertificateType):
+    """An x509 client certificate
+    """
+
     def __init__(self):
         super().__init__(
             name=CERTIFICATE_TYPE_CLIENT_NAME,
@@ -244,15 +285,41 @@ class x509Certificate(implements(Certificate)):
 
 
 class x509CertificateMinter(implements(CertificateMinter)):
+    """Mints an x509 certificate
+
+    Implements :class:`CertificateMinter <quickcert.interfaces.CertificateMinter>`
+    """
 
     @staticmethod
     def prepare_mint_args(
             certificate_type: x509AbstractCertificateType,
             issuer_key: PrivateKey,
             issuer: x509CertificateNameAttributes,
-            csr=None,
+            csr: x509SigningRequest = None,
             hash_algorithm: HashAlgorithm = DEFAULT_HASH_ALGORITHM,
             duration_days: int = 365):
+        """Helper function to prepare the minting properties
+
+        The certificate type is likely to be an instance of:
+
+        * :class:`x509RootCertificateType`
+        * :class:`x509IntermediateCertificateType`
+        * :class:`x509ServerCertificateType`
+        * :class:`x509ClientCertificateType`
+
+        :param certificate_type: the certificate type.
+        :type certificate_type: x509AbstractCertificateType
+        :param issuer_key: the key of the issuing party
+        :type issuer_key: PrivateKey
+        :param issuer: the name details for the issuer
+        :type issuer: x509CertificateNameAttributes
+        :param csr: certificate signing request, defaults to None
+        :type csr: x509SigningRequest, optional
+        :param hash_algorithm: the hash algorithm, defaults to DEFAULT_HASH_ALGORITHM
+        :type hash_algorithm: HashAlgorithm, optional
+        :param duration_days: the lifespan of the certificate in days, defaults to 365
+        :type duration_days: int, optional
+        """
 
         return {
             'certificate_type': certificate_type,

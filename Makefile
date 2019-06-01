@@ -28,8 +28,11 @@ ci:
 format:
 	pipenv run autopep8 --in-place --aggressive --aggressive --recursive quickcert/
 
-docs:
+docs: format
 	cd docs && make html
+
+docs-autobuild: format
+	cd docs && make autobuild
 
 clean:
 	pipenv clean
